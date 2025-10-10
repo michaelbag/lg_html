@@ -1,0 +1,38 @@
+# Выходные директории
+output*/
+
+# Макеты (шаблоны)
+makets/
+
+# Конфигурационные файлы с чувствительными данными
+config.json
+
+# CSV данные
+data.csv
+
+# Виртуальное окружение Python
+venv/
+env/
+ENV/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+
+# IDE настройки
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS специфичные файлы
+.DS_Store
+Thumbs.db
+*.log
+
+# Временные файлы
+temp_dm_*.png
+temp_dm_highres_*.png
+*.tmp

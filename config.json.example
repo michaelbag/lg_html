@@ -1,0 +1,20 @@
+{
+    "width": 30,
+    "height": 20,
+    "margin": 1,
+    "dpi": 300,
+    "delimiter": "\t",
+    "text_spacing": 20,
+    "dm_scale": 1.3,
+    "eac_image": "eac.png",
+    "eac_height": 4,
+    "no_pdf": false,
+    "template": "./makets/maket-01-04.pdf",
+    "dm_position": "bottom-right",
+    "dm_size": 20,
+    "dm_margin": 5,
+    "no_eac": true,
+    "no_product_name": true,
+    "text_below_dm": true,
+    "transparent_bg": true
+}
