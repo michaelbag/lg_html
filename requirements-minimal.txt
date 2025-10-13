@@ -1,0 +1,12 @@
+# Минимальные зависимости для базовой функциональности
+# (только изображения и HTML, без PDF и DataMatrix)
+
+Pillow>=9.0.0
+qrcode[pil]>=7.3.1
+
+# Для работы с CSV и конфигурацией (встроенные модули Python):
+# - csv
+# - json  
+# - configparser
+# - argparse
+# - pathlib

@@ -7,6 +7,11 @@ import configparser
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
+# Информация о версии
+__version__ = "1.0.0"
+__author__ = "Michael Bag"
+__description__ = "Генератор этикеток с DataMatrix/QR кодами для печати"
+
 # Попытка импорта библиотек для DataMatrix и PDF
 try:
     from pylibdmtx import pylibdmtx
@@ -34,7 +39,6 @@ except ImportError:
 
 try:
     import PyPDF2
-    from reportlab.pdfgen import canvas
     from io import BytesIO
     PDF_TEMPLATE_AVAILABLE = True
 except ImportError:
@@ -653,9 +657,14 @@ def remove_white_background(image):
         return None   
 
 def main():
-    parser = argparse.ArgumentParser(description='Генератор этикеток с кодами')
+    parser = argparse.ArgumentParser(
+        description=f'{__description__} v{__version__}',
+        epilog=f'Автор: {__author__} | Версия: {__version__}',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument('csv_file', help='Путь к CSV файлу')
     parser.add_argument('output_dir', help='Папка для сохранения результатов')
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     
     # Основные параметры с значениями по умолчанию None для возможности переопределения из конфига
     parser.add_argument('--width', type=int, default=None, help='Ширина страницы в мм')
@@ -687,6 +696,11 @@ def main():
     parser.add_argument('--config', help='Путь к файлу конфигурации (JSON или INI)')
     
     args = parser.parse_args()
+    
+    # Выводим информацию о версии при запуске
+    print(f"{__description__} v{__version__}")
+    print(f"Автор: {__author__}")
+    print("-" * 50)
     
     # Загружаем конфигурацию если указан файл
     if args.config:
