@@ -54,9 +54,12 @@ sudo apt-get install libdmtx0a libdmtx-dev
 brew install libdmtx
 ```
 
-### Windows
-- Используйте conda: `conda install -c conda-forge pylibdmtx`
-- Или установите предкомпилированные библиотеки
+### Windows 10/11
+- **Рекомендуется:** `conda install -c conda-forge pylibdmtx`
+- **Альтернатива:** `pip install pylibdmtx` (может требовать Visual Studio Build Tools)
+- **Fallback:** Используйте только QR коды с `requirements-minimal.txt`
+
+> 📋 **Подробные инструкции для Windows:** см. [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md)
 
 ## Проверка установки
 

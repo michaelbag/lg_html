@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 # Информация о версии
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток с DataMatrix/QR кодами для печати"
 
@@ -254,19 +254,37 @@ def create_label_page(text_line1, text_line2, data_matrix_data, page_width, page
         img.paste(eac_img, (eac_x, eac_y), eac_img if eac_img.mode == 'RGBA' else None)
         text_y += eac_img.height + 5  # Отступ между EAC и текстом
     
-    # Настройки шрифта для текста
+    # Настройки шрифта для текста (кроссплатформенные)
     try:
-        # Пробуем использовать стандартные шрифты
         font_size = 20
-        font = ImageFont.truetype("Arial.ttf", font_size)
-    except:
-        try:
-            font = ImageFont.truetype("/Library/Fonts/Arial.ttf", font_size)
-        except:
+        # Пробуем различные пути к шрифтам для разных ОС
+        font_paths = [
+            "Arial.ttf",  # Текущая директория
+            "arial.ttf",  # Windows (регистр не важен)
+            "/Library/Fonts/Arial.ttf",  # macOS
+            "/System/Library/Fonts/Arial.ttf",  # macOS (альтернативный путь)
+            "C:/Windows/Fonts/arial.ttf",  # Windows
+            "C:/Windows/Fonts/Arial.ttf",  # Windows (с заглавной)
+        ]
+        
+        font = None
+        for font_path in font_paths:
+            try:
+                font = ImageFont.truetype(font_path, font_size)
+                break
+            except:
+                continue
+        
+        # Если не нашли Arial, пробуем системный шрифт по умолчанию
+        if font is None:
             try:
                 font = ImageFont.load_default()
             except:
                 font = None
+                
+    except Exception as e:
+        print(f"Предупреждение: Не удалось загрузить шрифт: {e}")
+        font = None
     
     # Цвет текста (черный для белого фона, черный для прозрачного)
     text_color = 'black'
