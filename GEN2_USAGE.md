@@ -22,154 +22,188 @@ pip install -r requirements.txt
 ## Синтаксис
 
 ```bash
-python gen2.py <csv_file> <template_pdf> <output_pdf> [опции]
+python gen2.py [csv_file] [template_pdf] [output_pdf] [опции]
 ```
+
+## Структура папок
+
+Скрипт автоматически работает с папками:
+
+- **`input_data/`** - CSV файлы с данными (разделитель - табуляция)
+- **`input_templates/`** - PDF шаблоны для этикеток
+- **`temp/`** - временные файлы (создаются и удаляются автоматически)
+- **`output/`** - готовые PDF файлы с этикетками
+
+Если файлы не указаны в командной строке, скрипт автоматически найдет их в соответствующих папках.
 
 ## Обязательные параметры
 
-- `csv_file` - путь к CSV файлу с данными (разделитель - табуляция)
-- `template_pdf` - путь к PDF шаблону
-- `output_pdf` - путь к выходному PDF файлу
-- `--template-type` - тип шаблона: `single` или `multiple`
-- `--dm-x` - X координата DataMatrix (слева сверху) в мм
-- `--dm-y` - Y координата DataMatrix (слева сверху) в мм
-- `--dm-size` - размер DataMatrix кода в мм
+- `-t, --template-type` - тип шаблона: `single` или `multiple`
+- `-dx, --dm-x` - X координата DataMatrix (слева сверху) в мм
+- `-dy, --dm-y` - Y координата DataMatrix (слева сверху) в мм
+- `-ds, --dm-size` - размер DataMatrix кода в мм
+
+## Необязательные параметры файлов
+
+- `csv_file` - путь к CSV файлу с данными (если не указан, ищется в `input_data/`)
+- `template_pdf` - путь к PDF шаблону (если не указан, ищется в `input_templates/`)
+- `output_pdf` - путь к выходному PDF файлу (если не указан, создается в `output/`)
 
 ## Дополнительные параметры
 
 ### Для множественного шаблона
-- `--labels-horizontal` - количество этикеток по горизонтали (по умолчанию: 1)
-- `--labels-vertical` - количество этикеток по вертикали (по умолчанию: 1)
+- `-lh, --labels-horizontal` - количество этикеток по горизонтали (по умолчанию: 1)
+- `-lv, --labels-vertical` - количество этикеток по вертикали (по умолчанию: 1)
 
 ### Размеры и отступы для множественного шаблона
-- `--label-width` - ширина отдельной этикетки в мм (если не указано, вычисляется автоматически)
-- `--label-height` - высота отдельной этикетки в мм (если не указано, вычисляется автоматически)
-- `--label-margin-left` - отступ слева от края страницы до первой этикетки в мм (по умолчанию: 0)
-- `--label-margin-top` - отступ сверху от края страницы до первой этикетки в мм (по умолчанию: 0)
-- `--label-spacing-horizontal` - расстояние между этикетками по горизонтали в мм (по умолчанию: 0)
-- `--label-spacing-vertical` - расстояние между этикетками по вертикали в мм (по умолчанию: 0)
+- `-lw, --label-width` - ширина отдельной этикетки в мм (если не указано, вычисляется автоматически)
+- `-lh2, --label-height` - высота отдельной этикетки в мм (если не указано, вычисляется автоматически)
+- `-lml, --label-margin-left` - отступ слева от края страницы до первой этикетки в мм (по умолчанию: 0)
+- `-lmt, --label-margin-top` - отступ сверху от края страницы до первой этикетки в мм (по умолчанию: 0)
+- `-lsh, --label-spacing-horizontal` - расстояние между этикетками по горизонтали в мм (по умолчанию: 0)
+- `-lsv, --label-spacing-vertical` - расстояние между этикетками по вертикали в мм (по умолчанию: 0)
+
+### Параметры позиционирования DataMatrix
+- `-dx, --dm-x` - X координата DataMatrix (слева сверху) в мм
+- `-dy, --dm-y` - Y координата DataMatrix (слева сверху) в мм
+- `-ds, --dm-size` - размер DataMatrix кода в мм
 
 ### Параметры CSV
-- `--datamatrix-column` - номер столбца CSV файла для DataMatrix (начиная с 0, по умолчанию: 0)
+- `-dc, --datamatrix-column` - номер столбца CSV файла для DataMatrix (начиная с 0, по умолчанию: 0)
 
 ### Параметры текстового поля
-- `--text-column` - номер столбца CSV файла для текста (начиная с 0, если не указано, текст не добавляется)
-- `--text-start` - начальная позиция для извлечения текста (начиная с 0, по умолчанию: 0)
-- `--text-length` - длина извлекаемого текста (если не указано, берется до конца строки)
-- `--text-font-size` - размер шрифта для текста в пунктах (по умолчанию: 12)
-- `--text-offset-x` - смещение текста по X относительно DataMatrix в мм (по умолчанию: 0)
-- `--text-offset-y` - смещение текста по Y относительно DataMatrix в мм (по умолчанию: 0)
-- `--text-color` - цвет текста (по умолчанию: black)
+- `-tc, --text-column` - номер столбца CSV файла для текста (начиная с 0, если не указано, текст не добавляется)
+- `-ts, --text-start` - начальная позиция для извлечения текста (начиная с 0, по умолчанию: 0)
+- `-tl, --text-length` - длина извлекаемого текста (если не указано, берется до конца строки)
+- `-tfs, --text-font-size` - размер шрифта для текста в пунктах (по умолчанию: 12)
+- `-tox, --text-offset-x` - смещение текста по X относительно DataMatrix в мм (по умолчанию: 0)
+- `-toy, --text-offset-y` - смещение текста по Y относительно DataMatrix в мм (по умолчанию: 0)
+- `-tcl, --text-color` - цвет текста (по умолчанию: black)
 
 ### Дополнительные настройки
-- `--dpi` - DPI для генерации изображений (по умолчанию: 300)
+- `-d, --dpi` - DPI для генерации изображений (по умолчанию: 300)
+- `-v, --version` - показать версию программы
 
 ## Примеры использования
 
-### Пример 1: Один шаблон на одну этикетку
+### Пример 1: Автоматический поиск файлов
 
 ```bash
-python gen2.py data.csv maket.pdf output.pdf \
-    --template-type single \
-    --dm-x 10 \
-    --dm-y 5 \
-    --dm-size 15 \
-    --datamatrix-column 0
+# Все файлы берутся автоматически из папок
+python gen2.py -t single -dx 10 -dy 5 -ds 15 -dc 0
 ```
 
-### Пример 2: Шаблон с несколькими этикетками (2x2)
+### Пример 2: Один шаблон на одну этикетку
 
 ```bash
 python gen2.py data.csv maket.pdf output.pdf \
-    --template-type multiple \
-    --labels-horizontal 2 \
-    --labels-vertical 2 \
-    --dm-x 5 \
-    --dm-y 3 \
-    --dm-size 12 \
-    --datamatrix-column 0
+    -t single \
+    -dx 10 \
+    -dy 5 \
+    -ds 15 \
+    -dc 0
+```
+
+### Пример 3: Шаблон с несколькими этикетками (2x2)
+
+```bash
+python gen2.py data.csv maket.pdf output.pdf \
+    -t multiple \
+    -lh 2 \
+    -lv 2 \
+    -dx 5 \
+    -dy 3 \
+    -ds 12 \
+    -dc 0
+```
+
+### Пример 4: Автоматический поиск с множественным шаблоном
+
+```bash
+# Автоматически найдет CSV в input_data/ и PDF в input_templates/
+python gen2.py -t multiple -lh 3 -lv 6 -dx 5 -dy 3 -ds 12 -dc 0
 ```
 
 ### Пример 2.1: Шаблон с заданными размерами и отступами
 
 ```bash
 python gen2.py data.csv maket.pdf output.pdf \
-    --template-type multiple \
-    --labels-horizontal 3 \
-    --labels-vertical 6 \
-    --label-width 50 \
-    --label-height 30 \
-    --label-margin-left 10 \
-    --label-margin-top 15 \
-    --label-spacing-horizontal 5 \
-    --label-spacing-vertical 3 \
-    --dm-x 5 \
-    --dm-y 3 \
-    --dm-size 12 \
-    --datamatrix-column 0
+    -t multiple \
+    -lh 3 \
+    -lv 6 \
+    -lw 50 \
+    -lh2 30 \
+    -lml 10 \
+    -lmt 15 \
+    -lsh 5 \
+    -lsv 3 \
+    -dx 5 \
+    -dy 3 \
+    -ds 12 \
+    -dc 0
 ```
 
 ### Пример 3: Шаблон с несколькими этикетками (3x1)
 
 ```bash
 python gen2.py data.csv maket.pdf output.pdf \
-    --template-type multiple \
-    --labels-horizontal 3 \
-    --labels-vertical 1 \
-    --dm-x 8 \
-    --dm-y 2 \
-    --dm-size 10 \
-    --datamatrix-column 0 \
-    --dpi 600
+    -t multiple \
+    -lh 3 \
+    -lv 1 \
+    -dx 8 \
+    -dy 2 \
+    -ds 10 \
+    -dc 0 \
+    -d 600
 ```
 
 ### Пример 4: Использование другого столбца для DataMatrix
 
 ```bash
 python gen2.py data.csv maket.pdf output.pdf \
-    --template-type single \
-    --dm-x 15 \
-    --dm-y 8 \
-    --dm-size 18 \
-    --datamatrix-column 1
+    -t single \
+    -dx 15 \
+    -dy 8 \
+    -ds 18 \
+    -dc 1
 ```
 
 ### Пример 5: Добавление текстового поля
 
 ```bash
 python gen2.py data.csv maket.pdf output.pdf \
-    --template-type single \
-    --dm-x 10 \
-    --dm-y 5 \
-    --dm-size 15 \
-    --datamatrix-column 0 \
-    --text-column 2 \
-    --text-start 0 \
-    --text-length 10 \
-    --text-font-size 14 \
-    --text-offset-x 20 \
-    --text-offset-y 0 \
-    --text-color black
+    -t single \
+    -dx 10 \
+    -dy 5 \
+    -ds 15 \
+    -dc 0 \
+    -tc 2 \
+    -ts 0 \
+    -tl 10 \
+    -tfs 14 \
+    -tox 20 \
+    -toy 0 \
+    -tcl black
 ```
 
 ### Пример 6: Множественный шаблон с текстом
 
 ```bash
 python gen2.py data.csv maket.pdf output.pdf \
-    --template-type multiple \
-    --labels-horizontal 3 \
-    --labels-vertical 6 \
-    --dm-x 5 \
-    --dm-y 3 \
-    --dm-size 12 \
-    --datamatrix-column 0 \
-    --text-column 2 \
-    --text-start 0 \
-    --text-length 8 \
-    --text-font-size 10 \
-    --text-offset-x 15 \
-    --text-offset-y -5 \
-    --text-color black
+    -t multiple \
+    -lh 3 \
+    -lv 6 \
+    -dx 5 \
+    -dy 3 \
+    -ds 12 \
+    -dc 0 \
+    -tc 2 \
+    -ts 0 \
+    -tl 8 \
+    -tfs 10 \
+    -tox 15 \
+    -toy -5 \
+    -tcl black
 ```
 
 ## Формат CSV файла
@@ -295,5 +329,5 @@ pip install PyPDF2
 
 ## Версия
 
-Версия: 2.2  
+Версия: 2.5  
 Автор: Michael Bag
