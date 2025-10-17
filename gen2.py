@@ -25,7 +25,7 @@ from io import BytesIO
 from datetime import datetime
 
 # Информация о версии
-__version__ = "2.5"
+__version__ = "2.6"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
@@ -110,7 +110,7 @@ def extract_text_fragment(text, start_pos, length=None):
 
 def setup_directories():
     """Создание необходимых директорий"""
-    directories = ['input_data', 'input_templates', 'temp', 'output']
+    directories = ['input_data', 'input_templates', 'temp', 'output', 'conf']
     for directory in directories:
         Path(directory).mkdir(exist_ok=True)
         print(f"Директория {directory}: {'создана' if not Path(directory).exists() else 'существует'}")
@@ -159,6 +159,51 @@ def find_input_file(filename, directory='input_data', file_type=None):
         if file.is_file():
             print(f"Найден файл: {file}")
             return str(file)
+    
+    return None
+
+
+def load_config(config_file):
+    """Загрузка конфигурации из JSON файла"""
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        
+        print(f"Загружена конфигурация: {config.get('description', 'Без описания')}")
+        return config
+        
+    except FileNotFoundError:
+        print(f"Ошибка: Файл конфигурации не найден: {config_file}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Ошибка: Неверный формат JSON в файле конфигурации: {e}")
+        return None
+    except Exception as e:
+        print(f"Ошибка при загрузке конфигурации: {e}")
+        return None
+
+
+def find_config_file(config_file):
+    """Поиск файла конфигурации"""
+    if not config_file:
+        return None
+    
+    # Если указан полный путь, используем его
+    if os.path.isabs(config_file) or '/' in config_file or '\\' in config_file:
+        return config_file if os.path.exists(config_file) else None
+    
+    # Ищем в папке conf
+    conf_path = Path('conf') / config_file
+    if conf_path.exists():
+        return str(conf_path)
+    
+    # Ищем файлы с похожими именами
+    conf_dir = Path('conf')
+    if conf_dir.exists():
+        for file in conf_dir.glob(f"*{config_file}*"):
+            if file.is_file() and file.suffix == '.json':
+                print(f"Найден файл конфигурации: {file}")
+                return str(file)
     
     return None
 
@@ -521,7 +566,7 @@ def main():
     parser.add_argument('output_pdf', nargs='?', help='Путь к выходному PDF файлу. Если не указан, создается в папке output')
     
     # Параметры шаблона
-    parser.add_argument('-t', '--template-type', choices=['single', 'multiple'], required=True,
+    parser.add_argument('-t', '--template-type', choices=['single', 'multiple'], required=False,
                        help='Тип шаблона: single (один шаблон на этикетку) или multiple (несколько этикеток на шаблоне)')
     
     # Параметры для множественного шаблона
@@ -545,11 +590,11 @@ def main():
                        help='Расстояние между этикетками по вертикали в мм')
     
     # Параметры позиционирования DataMatrix
-    parser.add_argument('-dx', '--dm-x', type=float, required=True,
+    parser.add_argument('-dx', '--dm-x', type=float, required=False,
                        help='X координата DataMatrix (слева сверху) в мм')
-    parser.add_argument('-dy', '--dm-y', type=float, required=True,
+    parser.add_argument('-dy', '--dm-y', type=float, required=False,
                        help='Y координата DataMatrix (слева сверху) в мм')
-    parser.add_argument('-ds', '--dm-size', type=float, required=True,
+    parser.add_argument('-ds', '--dm-size', type=float, required=False,
                        help='Размер DataMatrix кода в мм')
     
     # Параметры CSV
@@ -575,6 +620,8 @@ def main():
     # Дополнительные параметры
     parser.add_argument('-d', '--dpi', type=int, default=300,
                        help='DPI для генерации изображений (по умолчанию: 300)')
+    parser.add_argument('-c', '--config', type=str, default=None,
+                       help='Путь к файлу конфигурации JSON. Если указан, параметры загружаются из файла')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}')
     
     args = parser.parse_args()
@@ -586,6 +633,35 @@ def main():
     
     # Создаем необходимые директории
     setup_directories()
+    
+    # Загружаем конфигурацию если указана
+    config = None
+    if args.config:
+        config_file = find_config_file(args.config)
+        if config_file:
+            config = load_config(config_file)
+            if not config:
+                sys.exit(1)
+        else:
+            print(f"Ошибка: Файл конфигурации не найден: {args.config}")
+            sys.exit(1)
+    
+    # Применяем конфигурацию к аргументам
+    if config:
+        # Обновляем аргументы значениями из конфигурации
+        for key, value in config.items():
+            if hasattr(args, key) and key != 'description':
+                setattr(args, key, value)
+                print(f"Параметр {key}: {value}")
+    
+    # Проверяем обязательные параметры
+    if not args.template_type:
+        print("Ошибка: Не указан тип шаблона (-t/--template-type). Укажите параметр или используйте конфигурационный файл (-c/--config)")
+        sys.exit(1)
+    
+    if args.dm_x is None or args.dm_y is None or args.dm_size is None:
+        print("Ошибка: Не указаны координаты DataMatrix (-dx, -dy, -ds). Укажите параметры или используйте конфигурационный файл (-c/--config)")
+        sys.exit(1)
     
     # Определяем пути к файлам
     csv_file = find_input_file(args.csv_file, 'input_data', 'csv')
