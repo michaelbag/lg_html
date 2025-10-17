@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 
 # Информация о версии
-__version__ = "2.1"
+__version__ = "2.2"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
@@ -92,7 +92,22 @@ def generate_data_matrix(data, size_pixels):
         return None
 
 
-def read_csv_data(csv_file, datamatrix_column):
+def extract_text_fragment(text, start_pos, length=None):
+    """Извлечение фрагмента текста с заданной позиции и длины"""
+    if not text:
+        return ""
+    
+    if start_pos >= len(text):
+        return ""
+    
+    if length is None:
+        return text[start_pos:]
+    else:
+        end_pos = start_pos + length
+        return text[start_pos:end_pos]
+
+
+def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, text_length=None):
     """Чтение данных из CSV файла с разделителем табуляция"""
     data = []
     try:
@@ -102,15 +117,23 @@ def read_csv_data(csv_file, datamatrix_column):
                 if len(row) > datamatrix_column:
                     datamatrix_data = row[datamatrix_column].strip()
                     if datamatrix_data:
+                        # Извлекаем текст если указан столбец
+                        text_data = ""
+                        if text_column is not None and len(row) > text_column:
+                            text_data = extract_text_fragment(row[text_column].strip(), text_start, text_length)
+                        
                         data.append({
                             'row_number': i + 1,
                             'datamatrix_data': datamatrix_data,
+                            'text_data': text_data,
                             'full_row': row
                         })
                 else:
                     print(f"Пропуск строки {i+1}: недостаточно столбцов (найдено {len(row)}, требуется {datamatrix_column+1})")
         
         print(f"Прочитано {len(data)} строк с данными для DataMatrix из CSV файла")
+        if text_column is not None:
+            print(f"Извлечение текста из столбца {text_column}, позиция {text_start}, длина {text_length or 'до конца'}")
         return data
         
     except Exception as e:
@@ -191,7 +214,8 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                            dm_x_mm, dm_y_mm, dm_size_mm, output_pdf, dpi=300,
                            label_width_mm=None, label_height_mm=None,
                            label_margin_left_mm=0, label_margin_top_mm=0,
-                           label_spacing_horizontal_mm=0, label_spacing_vertical_mm=0):
+                           label_spacing_horizontal_mm=0, label_spacing_vertical_mm=0,
+                           text_font_size=12, text_offset_x_mm=0, text_offset_y_mm=0, text_color='black'):
     """Генерация многостраничного PDF с этикетками"""
     
     if not PDF_AVAILABLE or not PDF_TEMPLATE_AVAILABLE:
@@ -230,7 +254,7 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                     temp_dm_path = f"temp_dm_{i}.png"
                     dm_img.save(temp_dm_path, 'PNG', dpi=(dpi, dpi))
                     
-                    # Создаем PDF страницу с DataMatrix
+                    # Создаем PDF страницу с DataMatrix и текстом
                     packet = BytesIO()
                     c = canvas.Canvas(packet, pagesize=(page_width, page_height))
                     
@@ -238,6 +262,21 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                     dm_reader = ImageReader(temp_dm_path)
                     c.drawImage(dm_reader, dm_x_pt, dm_y_pt, 
                                width=dm_size_pt, height=dm_size_pt, mask='auto')
+                    
+                    # Добавляем текст если есть
+                    if data_item.get('text_data'):
+                        # Вычисляем позицию текста относительно DataMatrix
+                        text_x = dm_x_pt + text_offset_x_mm * mm_to_pt
+                        text_y = dm_y_pt + text_offset_y_mm * mm_to_pt
+                        
+                        # Устанавливаем шрифт и цвет
+                        c.setFont("Helvetica", text_font_size)
+                        c.setFillColor(text_color)
+                        
+                        # Добавляем текст
+                        c.drawString(text_x, text_y, data_item['text_data'])
+                        
+                        print(f"Добавлен текст: '{data_item['text_data']}' на позицию ({text_x/mm_to_pt:.1f}, {text_y/mm_to_pt:.1f}) мм")
                     
                     c.save()
                     packet.seek(0)
@@ -320,7 +359,8 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                         'y': dm_y_final,
                         'row': label_row,
                         'col': label_col,
-                        'data': data_item['datamatrix_data']
+                        'data': data_item['datamatrix_data'],
+                        'text_data': data_item.get('text_data', '')
                     })
                     
                     print(f"Подготовлен DataMatrix на позицию ({label_col+1},{label_row+1}) страницы {current_page+1}: {data_item['datamatrix_data'][:20]}...")
@@ -336,11 +376,24 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                     packet = BytesIO()
                     c = canvas.Canvas(packet, pagesize=(page_width, page_height))
                     
-                    # Добавляем все DataMatrix на страницу
+                    # Добавляем все DataMatrix и текст на страницу
                     for dm_data in current_page_data:
                         dm_reader = ImageReader(dm_data['path'])
                         c.drawImage(dm_reader, dm_data['x'], dm_data['y'], 
                                    width=dm_size_pt, height=dm_size_pt, mask='auto')
+                        
+                        # Добавляем текст если есть
+                        if dm_data.get('text_data'):
+                            # Вычисляем позицию текста относительно DataMatrix
+                            text_x = dm_data['x'] + text_offset_x_mm * mm_to_pt
+                            text_y = dm_data['y'] + text_offset_y_mm * mm_to_pt
+                            
+                            # Устанавливаем шрифт и цвет
+                            c.setFont("Helvetica", text_font_size)
+                            c.setFillColor(text_color)
+                            
+                            # Добавляем текст
+                            c.drawString(text_x, text_y, dm_data['text_data'])
                         
                         # Удаляем временный файл
                         try:
@@ -423,6 +476,22 @@ def main():
     parser.add_argument('--datamatrix-column', type=int, default=0,
                        help='Номер столбца CSV файла для DataMatrix (начиная с 0)')
     
+    # Параметры текстового поля
+    parser.add_argument('--text-column', type=int, default=None,
+                       help='Номер столбца CSV файла для текста (начиная с 0)')
+    parser.add_argument('--text-start', type=int, default=0,
+                       help='Начальная позиция для извлечения текста (начиная с 0)')
+    parser.add_argument('--text-length', type=int, default=None,
+                       help='Длина извлекаемого текста (если не указано, берется до конца строки)')
+    parser.add_argument('--text-font-size', type=int, default=12,
+                       help='Размер шрифта для текста в пунктах')
+    parser.add_argument('--text-offset-x', type=float, default=0,
+                       help='Смещение текста по X относительно DataMatrix в мм')
+    parser.add_argument('--text-offset-y', type=float, default=0,
+                       help='Смещение текста по Y относительно DataMatrix в мм')
+    parser.add_argument('--text-color', default='black',
+                       help='Цвет текста (по умолчанию: black)')
+    
     # Дополнительные параметры
     parser.add_argument('--dpi', type=int, default=300,
                        help='DPI для генерации изображений (по умолчанию: 300)')
@@ -458,7 +527,8 @@ def main():
         sys.exit(1)
     
     # Читаем данные из CSV
-    csv_data = read_csv_data(args.csv_file, args.datamatrix_column)
+    csv_data = read_csv_data(args.csv_file, args.datamatrix_column, 
+                           args.text_column, args.text_start, args.text_length)
     if not csv_data:
         print("Ошибка: Не удалось прочитать данные из CSV файла")
         sys.exit(1)
@@ -480,7 +550,8 @@ def main():
         args.dm_x, args.dm_y, args.dm_size, args.output_pdf, args.dpi,
         args.label_width, args.label_height,
         args.label_margin_left, args.label_margin_top,
-        args.label_spacing_horizontal, args.label_spacing_vertical
+        args.label_spacing_horizontal, args.label_spacing_vertical,
+        args.text_font_size, args.text_offset_x, args.text_offset_y, args.text_color
     )
     
     if success:
