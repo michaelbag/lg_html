@@ -223,5 +223,5 @@ pip install PyPDF2
 
 ## Версия
 
-Версия: 2.0  
+Версия: 2.1  
 Автор: Michael Bag

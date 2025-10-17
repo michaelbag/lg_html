@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 
 # Информация о версии
-__version__ = "2.0"
+__version__ = "2.1"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
