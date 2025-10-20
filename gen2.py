@@ -2,16 +2,23 @@
 # -*- coding: utf-8 -*-
 """
 Генератор этикеток в многостраничный PDF документ с применением шаблона
-Версия 2.0
+Версия 2.9
 
 Поддерживает:
 - CSV файлы с разделителем табуляция
 - PDF шаблоны (один шаблон на этикетку или несколько этикеток на шаблоне)
 - Позиционирование DataMatrix кода по координатам
 - Многостраничный PDF документ
+- JSON конфигурационные файлы с подробными описаниями параметров
+
+Примеры конфигураций:
+- conf/single_template.json - для single шаблона (один шаблон на этикетку)
+- conf/multiple_template.json - для multiple шаблона (несколько этикеток на странице)
+- conf/complete_example.json - полный пример со всеми параметрами
+- conf/c251020_single.json - пример пользовательской конфигурации
 
 Автор: Michael Bag
-Версия: 2.0
+Версия: 2.9
 """
 
 import argparse
@@ -26,7 +33,7 @@ from io import BytesIO
 from datetime import datetime
 
 # Информация о версии
-__version__ = "2.8"
+__version__ = "2.9"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
@@ -115,6 +122,50 @@ def setup_directories():
     for directory in directories:
         Path(directory).mkdir(exist_ok=True)
         print(f"Директория {directory}: {'создана' if not Path(directory).exists() else 'существует'}")
+
+def show_config_examples():
+    """Отображение информации о доступных примерах конфигураций"""
+    print("\n" + "="*60)
+    print("ДОСТУПНЫЕ ПРИМЕРЫ КОНФИГУРАЦИЙ:")
+    print("="*60)
+    
+    config_examples = [
+        {
+            "file": "conf/single_template.json",
+            "description": "Для single шаблона (один шаблон на этикетку)",
+            "usage": "python gen2.py -c single_template.json"
+        },
+        {
+            "file": "conf/multiple_template.json", 
+            "description": "Для multiple шаблона (несколько этикеток на странице)",
+            "usage": "python gen2.py -c multiple_template.json"
+        },
+        {
+            "file": "conf/complete_example.json",
+            "description": "Полный пример со всеми параметрами и описаниями",
+            "usage": "python gen2.py -c complete_example.json"
+        },
+        {
+            "file": "conf/c251020_single.json",
+            "description": "Пример пользовательской конфигурации",
+            "usage": "python gen2.py -c c251020_single.json"
+        }
+    ]
+    
+    for i, config in enumerate(config_examples, 1):
+        print(f"\n{i}. {config['file']}")
+        print(f"   Описание: {config['description']}")
+        print(f"   Использование: {config['usage']}")
+        
+        # Проверяем существование файла
+        if Path(config['file']).exists():
+            print(f"   Статус: ✓ Файл существует")
+        else:
+            print(f"   Статус: ✗ Файл не найден")
+    
+    print("\n" + "="*60)
+    print("ВСЕ КОНФИГУРАЦИОННЫЕ ФАЙЛЫ СОДЕРЖАТ ПОДРОБНЫЕ ОПИСАНИЯ ПАРАМЕТРОВ")
+    print("="*60)
 
 
 def find_input_file(filename, directory='input_data', file_type=None):
@@ -627,6 +678,8 @@ def main():
                        help='DPI для генерации изображений (по умолчанию: 300)')
     parser.add_argument('-c', '--config', type=str, default=None,
                        help='Путь к файлу конфигурации JSON. Если указан, параметры загружаются из файла')
+    parser.add_argument('--show-configs', action='store_true',
+                       help='Показать доступные примеры конфигураций и выйти')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}')
     
     args = parser.parse_args()
@@ -635,6 +688,11 @@ def main():
     print(f"{__description__} v{__version__}")
     print(f"Автор: {__author__}")
     print("-" * 50)
+    
+    # Обрабатываем аргумент --show-configs
+    if args.show_configs:
+        show_config_examples()
+        sys.exit(0)
     
     # Создаем необходимые директории
     setup_directories()
