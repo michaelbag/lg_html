@@ -19,13 +19,14 @@ import csv
 import os
 import sys
 import json
+import copy
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from datetime import datetime
 
 # Информация о версии
-__version__ = "2.6"
+__version__ = "2.8"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
@@ -409,6 +410,8 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                     
                     # Объединяем с шаблоном
                     template_page = template_pdf.pages[0]
+                    # Создаем копию страницы шаблона для избежания наложения datamatrix
+                    template_page = copy.deepcopy(template_page)
                     template_page.merge_page(new_pdf.pages[0])
                     output.add_page(template_page)
                     
@@ -494,8 +497,10 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                 
                 # Если страница заполнена или это последний элемент, создаем страницу
                 if len(current_page_data) == labels_per_page_total or i == len(csv_data) - 1:
-                    # Создаем новую страницу с шаблоном
+                    # Создаем копию страницы шаблона для избежания наложения datamatrix
                     template_page = template_pdf.pages[current_page % len(template_pdf.pages)]
+                    # Создаем глубокую копию страницы шаблона
+                    template_page = copy.deepcopy(template_page)
                     
                     # Создаем PDF страницу с DataMatrix
                     packet = BytesIO()
@@ -648,11 +653,30 @@ def main():
     
     # Применяем конфигурацию к аргументам
     if config:
+        # Сначала сохраняем значения аргументов командной строки
+        original_csv_file = args.csv_file
+        original_template_pdf = args.template_pdf
+        original_output_pdf = args.output_pdf
+        
         # Обновляем аргументы значениями из конфигурации
         for key, value in config.items():
             if hasattr(args, key) and key != 'description':
                 setattr(args, key, value)
                 print(f"Параметр {key}: {value}")
+        
+        # Восстанавливаем аргументы командной строки если они были указаны
+        if original_csv_file is not None:
+            args.csv_file = original_csv_file
+            print(f"CSV файл из командной строки: {args.csv_file}")
+        
+        if original_template_pdf is not None:
+            args.template_pdf = original_template_pdf
+            print(f"PDF шаблон из командной строки: {args.template_pdf}")
+        
+        if original_output_pdf is not None:
+            args.output_pdf = original_output_pdf
+            print(f"Выходной PDF из командной строки: {args.output_pdf}")
+        
     
     # Проверяем обязательные параметры
     if not args.template_type:
