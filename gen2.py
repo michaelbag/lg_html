@@ -27,13 +27,14 @@ import os
 import sys
 import json
 import copy
+import time
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Информация о версии
-__version__ = "2.9"
+__version__ = "2.12"
 __author__ = "Michael Bag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
@@ -122,6 +123,65 @@ def setup_directories():
     for directory in directories:
         Path(directory).mkdir(exist_ok=True)
         print(f"Директория {directory}: {'создана' if not Path(directory).exists() else 'существует'}")
+
+def format_time_duration(seconds):
+    """Форматирование времени в читаемый вид"""
+    if seconds < 60:
+        return f"{seconds:.1f} сек"
+    elif seconds < 3600:
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes} мин {secs} сек"
+    else:
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        return f"{hours} ч {minutes} мин"
+
+
+def format_datetime(dt):
+    """Форматирование даты и времени"""
+    return dt.strftime("%H:%M:%S")
+
+
+def show_progress(current, total, start_time, last_update_time=None):
+    """Отображение прогресса обработки"""
+    if total == 0:
+        return
+    
+    percentage = (current / total) * 100
+    current_time = time.time()
+    
+    # Вычисляем скорость обработки
+    if last_update_time is not None and current > 0:
+        elapsed = current_time - start_time
+        if elapsed > 0:
+            items_per_second = current / elapsed
+            remaining_items = total - current
+            if items_per_second > 0:
+                eta_seconds = remaining_items / items_per_second
+                eta_time = datetime.now() + timedelta(seconds=eta_seconds)
+                eta_str = f" | ETA: {format_datetime(eta_time)} ({format_time_duration(eta_seconds)})"
+            else:
+                eta_str = " | ETA: вычисляется..."
+        else:
+            eta_str = " | ETA: вычисляется..."
+    else:
+        eta_str = ""
+    
+    # Форматируем прогресс-бар
+    bar_length = 30
+    filled_length = int(bar_length * current // total)
+    bar = '█' * filled_length + '░' * (bar_length - filled_length)
+    
+    # Время начала и текущее время
+    start_dt = datetime.fromtimestamp(start_time)
+    current_dt = datetime.now()
+    elapsed_time = current_time - start_time
+    
+    print(f"\rПрогресс: [{bar}] {percentage:5.1f}% ({current}/{total}) | "
+          f"Начало: {format_datetime(start_dt)} | "
+          f"Прошло: {format_time_duration(elapsed_time)}{eta_str}", end='', flush=True)
+
 
 def show_config_examples():
     """Отображение информации о доступных примерах конфигураций"""
@@ -395,6 +455,10 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                            text_font_size=12, text_offset_x_mm=0, text_offset_y_mm=0, text_color='black'):
     """Генерация многостраничного PDF с этикетками"""
     
+    # Засекаем время начала
+    start_time = time.time()
+    start_datetime = datetime.now()
+    
     if not PDF_AVAILABLE or not PDF_TEMPLATE_AVAILABLE:
         print("Ошибка: Необходимые библиотеки для PDF не установлены")
         return False
@@ -420,9 +484,15 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
         # Создаем новый PDF
         output = PyPDF2.PdfWriter()
         
+        print(f"Начинаем генерацию PDF с {len(csv_data)} записями...")
+        print(f"Время начала: {format_datetime(start_datetime)}")
+        print()
+        
         if template_type == "single":
             # Один шаблон на одну этикетку
             for i, data_item in enumerate(csv_data):
+                # Отображаем прогресс
+                show_progress(i, len(csv_data), start_time)
                 # Создаем DataMatrix изображение
                 dm_img = create_datamatrix_image(data_item['datamatrix_data'], dm_size_mm, dpi)
                 
@@ -510,6 +580,9 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
             current_page_data = []  # Список DataMatrix для текущей страницы
             
             for i, data_item in enumerate(csv_data):
+                # Отображаем прогресс
+                show_progress(i, len(csv_data), start_time)
+                
                 # Вычисляем позицию этикетки на текущей странице
                 position_on_page = i % labels_per_page_total
                 label_row = position_on_page // labels_horizontal
@@ -596,12 +669,30 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
                     current_page += 1
                     current_page_data = []
         
+        # Отображаем финальный прогресс
+        show_progress(len(csv_data), len(csv_data), start_time)
+        print()  # Новая строка после прогресс-бара
+        
         # Сохраняем результат
         with open(output_pdf, "wb") as output_file:
             output.write(output_file)
         
-        print(f"Многостраничный PDF создан: {output_pdf}")
-        print(f"Всего страниц: {len(output.pages)}")
+        # Вычисляем общее время выполнения
+        end_time = time.time()
+        total_time = end_time - start_time
+        end_datetime = datetime.now()
+        
+        print(f"\n{'='*60}")
+        print(f"ГЕНЕРАЦИЯ ЗАВЕРШЕНА")
+        print(f"{'='*60}")
+        print(f"Время начала:     {format_datetime(start_datetime)}")
+        print(f"Время завершения: {format_datetime(end_datetime)}")
+        print(f"Общее время:      {format_time_duration(total_time)}")
+        print(f"Обработано записей: {len(csv_data)}")
+        print(f"Создано страниц:  {len(output.pages)}")
+        print(f"Выходной файл:    {output_pdf}")
+        print(f"{'='*60}")
+        
         return True
         
     except Exception as e:

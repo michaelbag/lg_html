@@ -1,25 +1,6 @@
-# Основные зависимости для генератора этикеток
-Pillow>=9.0.0
-
-# Для генерации DataMatrix кодов (основной вариант)
-pylibdmtx>=0.1.9
-
-# Альтернатива для QR кодов (если pylibdmtx недоступен)
-qrcode[pil]>=7.3.1
-
-# Для генерации PDF файлов
-reportlab>=3.6.0
-
-# Для работы с PDF шаблонами
-PyPDF2>=3.0.0
-
-# Дополнительные зависимости для обработки изображений
-# (уже включены в Pillow, но указаны для ясности)
-# - Image processing
-# - Font handling
-# - Color space conversion
-
-# Системные зависимости (для pylibdmtx на разных ОС):
-# Ubuntu/Debian: sudo apt-get install libdmtx0a libdmtx-dev
-# macOS: brew install libdmtx
-# Windows: предустановленные библиотеки или через conda
+charset-normalizer==3.4.3
+pathlib==1.0.1
+pillow==11.3.0
+pylibdmtx==0.1.10
+PyPDF2==3.0.1
+reportlab==4.4.4
