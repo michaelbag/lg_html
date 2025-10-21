@@ -3,4 +3,5 @@ pathlib==1.0.1
 pillow==11.3.0
 pylibdmtx==0.1.10
 PyPDF2==3.0.1
+qrcode==8.2
 reportlab==4.4.4
