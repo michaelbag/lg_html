@@ -35,7 +35,9 @@ from datetime import datetime, timedelta
 
 # Информация о версии
 __version__ = "2.12"
-__author__ = "Michael Bag"
+__author__ = "Michael BAG"
+__author_email__ = "mk@p7net.ru"
+__author_telegram__ = "https://t.me/michaelbag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
 # Попытка импорта библиотек для DataMatrix и PDF
@@ -703,7 +705,10 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
 def main():
     parser = argparse.ArgumentParser(
         description=f'{__description__} v{__version__}',
-        epilog=f'Автор: {__author__} | Версия: {__version__}',
+        epilog=f'''Автор: {__author__}
+E-mail: {__author_email__}
+Telegram: {__author_telegram__}
+Версия: {__version__}''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
