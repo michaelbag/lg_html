@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Генератор этикеток в многостраничный PDF документ с применением шаблона
-Версия 2.9
+Версия 2.15
 
 Поддерживает:
 - CSV файлы с разделителем табуляция
@@ -34,7 +34,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Автор: Michael Bag
-Версия: 2.9
+Версия: 2.15
 """
 
 import argparse
@@ -50,7 +50,7 @@ from io import BytesIO
 from datetime import datetime, timedelta
 
 # Информация о версии
-__version__ = "2.12"
+__version__ = "2.15"
 __author__ = "Michael BAG"
 __author_email__ = "mk@p7net.ru"
 __author_telegram__ = "https://t.me/michaelbag"
