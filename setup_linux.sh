@@ -1,102 +1,102 @@
 #!/bin/bash
-# Скрипт инициализации проекта lg_html для Linux
-# Автор: Michael BAG
-# Версия: 1.0
+# lg_html project initialization script for Linux
+# Author: Michael BAG
+# Version: 1.0
 
-set -e  # Выход при ошибке
+set -e  # Exit on error
 
 echo "========================================"
-echo "Инициализация проекта lg_html для Linux"
+echo "lg_html Project Initialization for Linux"
 echo "========================================"
 echo
 
-# Проверка наличия Python
+# Check for Python
 if ! command -v python3 &> /dev/null; then
-    echo "ОШИБКА: Python3 не найден в системе!"
-    echo "Установите Python 3.7+ используя пакетный менеджер вашего дистрибутива:"
+    echo "ERROR: Python3 not found in system!"
+    echo "Install Python 3.7+ using your distribution's package manager:"
     echo "  Ubuntu/Debian: sudo apt update && sudo apt install python3 python3-pip python3-venv"
     echo "  CentOS/RHEL: sudo yum install python3 python3-pip"
     echo "  Fedora: sudo dnf install python3 python3-pip"
     exit 1
 fi
 
-echo "✓ Python найден"
+echo "✓ Python found"
 python3 --version
 
-# Проверка наличия pip
+# Check for pip
 if ! command -v pip3 &> /dev/null; then
-    echo "ОШИБКА: pip3 не найден!"
-    echo "Установите pip3:"
+    echo "ERROR: pip3 not found!"
+    echo "Install pip3:"
     echo "  Ubuntu/Debian: sudo apt install python3-pip"
     echo "  CentOS/RHEL: sudo yum install python3-pip"
     echo "  Fedora: sudo dnf install python3-pip"
     exit 1
 fi
 
-echo "✓ pip3 найден"
+echo "✓ pip3 found"
 
-# Создание виртуального окружения
+# Create virtual environment
 echo
-echo "Создание виртуального окружения..."
+echo "Creating virtual environment..."
 python3 -m venv venv
-echo "✓ Виртуальное окружение создано"
+echo "✓ Virtual environment created"
 
-# Активация виртуального окружения
+# Activate virtual environment
 echo
-echo "Активация виртуального окружения..."
+echo "Activating virtual environment..."
 source venv/bin/activate
-echo "✓ Виртуальное окружение активировано"
+echo "✓ Virtual environment activated"
 
-# Обновление pip
+# Update pip
 echo
-echo "Обновление pip..."
-python -m pip install --upgrade pip || echo "ПРЕДУПРЕЖДЕНИЕ: Не удалось обновить pip, продолжаем..."
+echo "Updating pip..."
+python -m pip install --upgrade pip || echo "WARNING: Failed to update pip, continuing..."
 
-# Установка системных зависимостей для pylibdmtx
+# Install system dependencies for pylibdmtx
 echo
-echo "Установка системных зависимостей..."
+echo "Installing system dependencies..."
 if command -v apt-get &> /dev/null; then
-    echo "Обнаружен apt, устанавливаем системные зависимости..."
+    echo "Detected apt, installing system dependencies..."
     sudo apt-get update
     sudo apt-get install -y libdmtx-dev libdmtx0a
 elif command -v yum &> /dev/null; then
-    echo "Обнаружен yum, устанавливаем системные зависимости..."
+    echo "Detected yum, installing system dependencies..."
     sudo yum install -y libdmtx-devel
 elif command -v dnf &> /dev/null; then
-    echo "Обнаружен dnf, устанавливаем системные зависимости..."
+    echo "Detected dnf, installing system dependencies..."
     sudo dnf install -y libdmtx-devel
 else
-    echo "ПРЕДУПРЕЖДЕНИЕ: Неизвестный пакетный менеджер, пропускаем установку системных зависимостей"
-    echo "Установите libdmtx вручную для работы с DataMatrix кодами"
+    echo "WARNING: Unknown package manager, skipping system dependencies installation"
+    echo "Install libdmtx manually for DataMatrix code support"
 fi
 
-# Установка зависимостей Python
+# Install Python dependencies
 echo
-echo "Установка зависимостей Python..."
+echo "Installing Python dependencies..."
 pip install -r requirements.txt
-echo "✓ Зависимости установлены"
+echo "✓ Dependencies installed"
 
-# Создание необходимых папок
+# Create necessary folders
 echo
-echo "Создание структуры папок..."
+echo "Creating folder structure..."
 mkdir -p input_data input_templates output temp conf
-echo "✓ Структура папок создана"
+echo "✓ Folder structure created"
 
-# Проверка установки
+# Check installation
 echo
-echo "Проверка установки..."
-python -c "import pylibdmtx, qrcode, reportlab, PyPDF2, PIL; print('✓ Все модули импортированы успешно')" || echo "ПРЕДУПРЕЖДЕНИЕ: Некоторые модули не импортированы корректно"
+echo "Checking installation..."
+python -c "import pylibdmtx, qrcode, reportlab, PyPDF2, PIL; print('✓ All modules imported successfully')" || echo "WARNING: Some modules were not imported correctly"
 
 echo
 echo "========================================"
-echo "Инициализация завершена успешно!"
+echo "Initialization completed successfully!"
 echo "========================================"
 echo
-echo "Для активации виртуального окружения в будущем используйте:"
+echo "To activate virtual environment in the future, use:"
 echo "  source venv/bin/activate"
 echo
-echo "Для запуска генератора используйте:"
+echo "To run the generator, use:"
 echo "  python gen2.py --help"
 echo
-echo "Документация доступна в README.md"
+echo "Documentation is available in README.md"
 echo

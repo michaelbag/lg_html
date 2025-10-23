@@ -1,114 +1,114 @@
 @echo off
-REM Скрипт инициализации проекта lg_html для Windows
-REM Автор: Michael BAG
-REM Версия: 1.0
+REM lg_html project initialization script for Windows
+REM Author: Michael BAG
+REM Version: 1.0
 
 echo ========================================
-echo Инициализация проекта lg_html для Windows
+echo lg_html Project Initialization for Windows
 echo ========================================
 echo.
 
-REM Проверка наличия Python
+REM Check for Python
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ОШИБКА: Python не найден в системе!
-    echo Пожалуйста, установите Python 3.7+ с https://python.org
-    echo Убедитесь, что Python добавлен в PATH
+    echo ERROR: Python not found in system!
+    echo Please install Python 3.7+ from https://python.org
+    echo Make sure Python is added to PATH
     pause
     exit /b 1
 )
 
-echo ✓ Python найден
+echo ✓ Python found
 python --version
 
-REM Проверка наличия pip
+REM Check for pip
 pip --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ОШИБКА: pip не найден!
-    echo Попробуйте переустановить Python с опцией "Add Python to PATH"
+    echo ERROR: pip not found!
+    echo Try reinstalling Python with "Add Python to PATH" option
     pause
     exit /b 1
 )
 
-echo ✓ pip найден
+echo ✓ pip found
 
-REM Создание виртуального окружения
+REM Create virtual environment
 echo.
-echo Создание виртуального окружения...
+echo Creating virtual environment...
 python -m venv venv
 if %errorlevel% neq 0 (
-    echo ОШИБКА: Не удалось создать виртуальное окружение
+    echo ERROR: Failed to create virtual environment
     pause
     exit /b 1
 )
 
-echo ✓ Виртуальное окружение создано
+echo ✓ Virtual environment created
 
-REM Активация виртуального окружения
+REM Activate virtual environment
 echo.
-echo Активация виртуального окружения...
+echo Activating virtual environment...
 call venv\Scripts\activate.bat
 if %errorlevel% neq 0 (
-    echo ОШИБКА: Не удалось активировать виртуальное окружение
+    echo ERROR: Failed to activate virtual environment
     pause
     exit /b 1
 )
 
-echo ✓ Виртуальное окружение активировано
+echo ✓ Virtual environment activated
 
-REM Обновление pip
+REM Update pip
 echo.
-echo Обновление pip...
+echo Updating pip...
 python -m pip install --upgrade pip
 if %errorlevel% neq 0 (
-    echo ПРЕДУПРЕЖДЕНИЕ: Не удалось обновить pip, продолжаем...
+    echo WARNING: Failed to update pip, continuing...
 )
 
-REM Установка зависимостей
+REM Install dependencies
 echo.
-echo Установка зависимостей...
+echo Installing dependencies...
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
-    echo ОШИБКА: Не удалось установить зависимости
-    echo Попробуйте установить их вручную:
+    echo ERROR: Failed to install dependencies
+    echo Try installing them manually:
     echo   pip install -r requirements.txt
     pause
     exit /b 1
 )
 
-echo ✓ Зависимости установлены
+echo ✓ Dependencies installed
 
-REM Создание необходимых папок
+REM Create necessary folders
 echo.
-echo Создание структуры папок...
+echo Creating folder structure...
 if not exist "input_data" mkdir input_data
 if not exist "input_templates" mkdir input_templates
 if not exist "output" mkdir output
 if not exist "temp" mkdir temp
 if not exist "conf" mkdir conf
 
-echo ✓ Структура папок создана
+echo ✓ Folder structure created
 
-REM Проверка установки
+REM Check installation
 echo.
-echo Проверка установки...
-python -c "import pylibdmtx, qrcode, reportlab, PyPDF2, PIL; print('✓ Все модули импортированы успешно')"
+echo Checking installation...
+python -c "import pylibdmtx, qrcode, reportlab, PyPDF2, PIL; print('✓ All modules imported successfully')"
 if %errorlevel% neq 0 (
-    echo ПРЕДУПРЕЖДЕНИЕ: Некоторые модули не импортированы корректно
-    echo Проверьте установку зависимостей вручную
+    echo WARNING: Some modules were not imported correctly
+    echo Check dependency installation manually
 )
 
 echo.
 echo ========================================
-echo Инициализация завершена успешно!
+echo Initialization completed successfully!
 echo ========================================
 echo.
-echo Для активации виртуального окружения в будущем используйте:
+echo To activate virtual environment in the future, use:
 echo   venv\Scripts\activate.bat
 echo.
-echo Для запуска генератора используйте:
+echo To run the generator, use:
 echo   python gen2.py --help
 echo.
-echo Документация доступна в README.md
+echo Documentation is available in README.md
 echo.
 pause
