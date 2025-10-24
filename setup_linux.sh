@@ -70,9 +70,31 @@ else
     echo "Install libdmtx manually for DataMatrix code support"
 fi
 
-# Install Python dependencies
+# Detect system architecture
+echo
+echo "Detecting system architecture..."
+ARCH=$(uname -m)
+OS=$(uname -s)
+echo "✓ Architecture: $ARCH"
+echo "✓ Operating System: $OS"
+
+# Install Python dependencies with architecture-specific handling
 echo
 echo "Installing Python dependencies..."
+
+# Handle Pillow installation for different architectures
+if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
+    echo "✓ Detected ARM64 architecture, installing ARM64-compatible packages..."
+    pip install --no-cache-dir --force-reinstall Pillow
+elif [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then
+    echo "✓ Detected x86_64 architecture, installing x86_64-compatible packages..."
+    pip install --no-cache-dir --force-reinstall Pillow
+else
+    echo "⚠️  Unknown architecture ($ARCH), using default package installation..."
+    pip install Pillow
+fi
+
+# Install other dependencies
 pip install -r requirements.txt
 echo "✓ Dependencies installed"
 

@@ -63,6 +63,16 @@ __author_email__ = "mk@p7net.ru"
 __author_telegram__ = "https://t.me/michaelbag"
 __description__ = "Генератор этикеток в многостраничный PDF с шаблонами"
 
+# Настройка переменных окружения для libdmtx на macOS
+import os
+if os.name == 'posix' and 'darwin' in os.uname().sysname.lower():
+    # На macOS нужно добавить путь к libdmtx в DYLD_LIBRARY_PATH
+    homebrew_lib_path = "/opt/homebrew/lib"
+    if os.path.exists(homebrew_lib_path):
+        current_dyld = os.environ.get('DYLD_LIBRARY_PATH', '')
+        if homebrew_lib_path not in current_dyld:
+            os.environ['DYLD_LIBRARY_PATH'] = f"{homebrew_lib_path}:{current_dyld}" if current_dyld else homebrew_lib_path
+
 # Попытка импорта библиотек для DataMatrix и PDF
 try:
     from pylibdmtx import pylibdmtx

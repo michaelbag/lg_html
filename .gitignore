@@ -1,12 +1,17 @@
 # Рабочие директории
 input_data/
+!input_data/README.md
 input_templates/
+!input_templates/README.md
 output/
+!output/README.md
 temp/
+!temp/README.md
 temp*/
 
 # Конфигурационные файлы (пользовательские настройки)
 conf/
+!conf/README.md
 
 # Макеты (шаблоны) - устарело
 makets/

@@ -64,9 +64,29 @@ if %errorlevel% neq 0 (
     echo WARNING: Failed to update pip, continuing...
 )
 
-REM Install dependencies
+REM Detect system architecture
+echo.
+echo Detecting system architecture...
+for /f "tokens=2 delims==" %%i in ('wmic os get osarchitecture /value ^| find "="') do set ARCH=%%i
+echo ✓ Architecture: %ARCH%
+
+REM Install dependencies with architecture-specific handling
 echo.
 echo Installing dependencies...
+
+REM Handle Pillow installation for different architectures
+if "%ARCH%"=="64-bit" (
+    echo ✓ Detected 64-bit architecture, installing x86_64-compatible packages...
+    pip install --no-cache-dir --force-reinstall Pillow
+) else if "%ARCH%"=="32-bit" (
+    echo ✓ Detected 32-bit architecture, installing x86-compatible packages...
+    pip install --no-cache-dir --force-reinstall Pillow
+) else (
+    echo ⚠️  Unknown architecture (%ARCH%), using default package installation...
+    pip install Pillow
+)
+
+REM Install other dependencies
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo ERROR: Failed to install dependencies

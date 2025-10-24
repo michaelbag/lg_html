@@ -142,6 +142,315 @@ def detect_file_type(file_path):
     else:
         return "unknown"
 
+def get_user_input(prompt, default=None, input_type=str, choices=None):
+    """Получение ввода от пользователя с проверкой типа и выбора"""
+    while True:
+        if default is not None:
+            full_prompt = f"{prompt} [{default}]: "
+        else:
+            full_prompt = f"{prompt}: "
+        
+        try:
+            user_input = input(full_prompt).strip()
+            
+            # Если ввод пустой и есть значение по умолчанию
+            if not user_input and default is not None:
+                return default
+            
+            # Если ввод пустой и нет значения по умолчанию
+            if not user_input:
+                print("❌ Поле не может быть пустым. Попробуйте снова.")
+                continue
+            
+            # Проверка выбора из списка
+            if choices and user_input not in choices:
+                print(f"❌ Выберите один из вариантов: {', '.join(choices)}")
+                continue
+            
+            # Преобразование типа
+            if input_type == int:
+                return int(user_input)
+            elif input_type == float:
+                return float(user_input)
+            else:
+                return user_input
+                
+        except ValueError:
+            print(f"❌ Введите корректное значение типа {input_type.__name__}")
+        except KeyboardInterrupt:
+            print("\n\n❌ Отменено пользователем")
+            sys.exit(1)
+
+def interactive_mode():
+    """Интерактивный режим создания конфигурации"""
+    print("=" * 60)
+    print("🔧 ИНТЕРАКТИВНЫЙ РЕЖИМ СОЗДАНИЯ КОНФИГУРАЦИИ")
+    print("=" * 60)
+    print()
+    
+    # Основные параметры
+    print("📁 ОСНОВНЫЕ ПАРАМЕТРЫ")
+    print("-" * 30)
+    
+    data_file = get_user_input(
+        "Путь к файлу с данными (CSV или Excel)",
+        default="input_data/data.csv"
+    )
+    
+    template_pdf = get_user_input(
+        "Путь к PDF шаблону",
+        default="input_templates/template.pdf"
+    )
+    
+    output_pdf = get_user_input(
+        "Путь к выходному PDF файлу",
+        default="output/result.pdf"
+    )
+    
+    template_type = get_user_input(
+        "Тип шаблона (single - один на этикетку, multiple - несколько на странице)",
+        default="single",
+        choices=["single", "multiple"]
+    )
+    
+    print()
+    print("📊 ПАРАМЕТРЫ DATAMATRIX")
+    print("-" * 30)
+    
+    dm_x = get_user_input(
+        "Позиция DataMatrix по X (мм) - расстояние от левого края",
+        default=10.0,
+        input_type=float
+    )
+    
+    dm_y = get_user_input(
+        "Позиция DataMatrix по Y (мм) - расстояние от верхнего края",
+        default=5.0,
+        input_type=float
+    )
+    
+    dm_size = get_user_input(
+        "Размер DataMatrix (мм)",
+        default=15.0,
+        input_type=float
+    )
+    
+    datamatrix_column = get_user_input(
+        "Номер столбца с DataMatrix данными (начиная с 0)",
+        default=0,
+        input_type=int
+    )
+    
+    print()
+    print("📝 ПАРАМЕТРЫ ТЕКСТА")
+    print("-" * 30)
+    
+    use_text = get_user_input(
+        "Добавить текст на этикетку? (y/n)",
+        default="n",
+        choices=["y", "n", "yes", "no"]
+    ).lower() in ["y", "yes"]
+    
+    text_column = None
+    text_start = 0
+    text_length = None
+    text_font_size = 12
+    text_offset_x = 5.0
+    text_offset_y = 0.0
+    text_color = "black"
+    
+    if use_text:
+        text_column = get_user_input(
+            "Номер столбца с текстом (начиная с 0)",
+            input_type=int
+        )
+        
+        text_start = get_user_input(
+            "Начальная позиция для извлечения текста",
+            default=0,
+            input_type=int
+        )
+        
+        text_length = get_user_input(
+            "Длина извлекаемого текста (оставьте пустым для всей строки)",
+            input_type=int
+        )
+        
+        text_font_size = get_user_input(
+            "Размер шрифта текста",
+            default=12,
+            input_type=int
+        )
+        
+        text_offset_x = get_user_input(
+            "Смещение текста по X относительно DataMatrix (мм)",
+            default=5.0,
+            input_type=float
+        )
+        
+        text_offset_y = get_user_input(
+            "Смещение текста по Y относительно DataMatrix (мм)",
+            default=0.0,
+            input_type=float
+        )
+        
+        text_color = get_user_input(
+            "Цвет текста",
+            default="black"
+        )
+    
+    # Параметры для multiple шаблона
+    labels_horizontal = 2
+    labels_vertical = 3
+    label_width = 100.0
+    label_height = 50.0
+    label_margin_left = 10.0
+    label_margin_top = 15.0
+    label_spacing_horizontal = 5.0
+    label_spacing_vertical = 3.0
+    
+    if template_type == "multiple":
+        print()
+        print("📐 ПАРАМЕТРЫ MULTIPLE ШАБЛОНА")
+        print("-" * 30)
+        
+        labels_horizontal = get_user_input(
+            "Количество этикеток по горизонтали",
+            default=2,
+            input_type=int
+        )
+        
+        labels_vertical = get_user_input(
+            "Количество этикеток по вертикали",
+            default=3,
+            input_type=int
+        )
+        
+        label_width = get_user_input(
+            "Ширина отдельной этикетки (мм)",
+            default=100.0,
+            input_type=float
+        )
+        
+        label_height = get_user_input(
+            "Высота отдельной этикетки (мм)",
+            default=50.0,
+            input_type=float
+        )
+        
+        label_margin_left = get_user_input(
+            "Отступ слева от края страницы (мм)",
+            default=10.0,
+            input_type=float
+        )
+        
+        label_margin_top = get_user_input(
+            "Отступ сверху от края страницы (мм)",
+            default=15.0,
+            input_type=float
+        )
+        
+        label_spacing_horizontal = get_user_input(
+            "Расстояние между этикетками по горизонтали (мм)",
+            default=5.0,
+            input_type=float
+        )
+        
+        label_spacing_vertical = get_user_input(
+            "Расстояние между этикетками по вертикали (мм)",
+            default=3.0,
+            input_type=float
+        )
+    
+    # Параметры Excel
+    excel_sheet = 0
+    file_type = detect_file_type(data_file)
+    if file_type == "excel":
+        print()
+        print("📊 ПАРАМЕТРЫ EXCEL")
+        print("-" * 30)
+        
+        excel_sheet = get_user_input(
+            "Номер или имя листа Excel (0 для первого листа)",
+            default=0
+        )
+    
+    print()
+    print("⚙️ ПАРАМЕТРЫ КАЧЕСТВА")
+    print("-" * 30)
+    
+    dpi = get_user_input(
+        "DPI для генерации изображений",
+        default=300,
+        input_type=int
+    )
+    
+    print()
+    print("💾 СОХРАНЕНИЕ КОНФИГУРАЦИИ")
+    print("-" * 30)
+    
+    output_file = get_user_input(
+        "Путь к выходному JSON файлу",
+        default="config.json"
+    )
+    
+    # Создаем конфигурацию
+    kwargs = {
+        'dm_x': dm_x,
+        'dm_y': dm_y,
+        'dm_size': dm_size,
+        'datamatrix_column': datamatrix_column,
+        'text_column': text_column,
+        'text_start': text_start,
+        'text_length': text_length,
+        'text_font_size': text_font_size,
+        'text_offset_x': text_offset_x,
+        'text_offset_y': text_offset_y,
+        'text_color': text_color,
+        'excel_sheet': excel_sheet,
+        'dpi': dpi
+    }
+    
+    if template_type == 'multiple':
+        kwargs.update({
+            'labels_horizontal': labels_horizontal,
+            'labels_vertical': labels_vertical,
+            'label_width': label_width,
+            'label_height': label_height,
+            'label_margin_left': label_margin_left,
+            'label_margin_top': label_margin_top,
+            'label_spacing_horizontal': label_spacing_horizontal,
+            'label_spacing_vertical': label_spacing_vertical
+        })
+        config = create_multiple_template_config(data_file, template_pdf, output_pdf, **kwargs)
+    else:
+        config = create_single_template_config(data_file, template_pdf, output_pdf, **kwargs)
+    
+    # Сохраняем конфигурацию
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+        
+        print()
+        print("✅ КОНФИГУРАЦИЯ УСПЕШНО СОЗДАНА!")
+        print("=" * 50)
+        print(f"📄 Файл: {output_file}")
+        print(f"📊 Тип шаблона: {template_type}")
+        print(f"📁 Файл данных: {data_file}")
+        print(f"📄 Шаблон PDF: {template_pdf}")
+        print(f"📄 Выходной PDF: {output_pdf}")
+        
+        if file_type == "excel":
+            print(f"📊 Лист Excel: {excel_sheet}")
+        
+        print()
+        print("🚀 ДЛЯ ИСПОЛЬЗОВАНИЯ КОНФИГУРАЦИИ:")
+        print(f"   python gen2.py -c {output_file}")
+        
+    except Exception as e:
+        print(f"❌ Ошибка при сохранении конфигурации: {e}")
+        sys.exit(1)
+
 def main():
     # Информация о версии и авторе
     __version__ = "1.0"
@@ -156,13 +465,22 @@ def main():
         epilog=f"""
 Примеры использования:
 
-1. Создание конфигурации для CSV файла (single):
-   python generate_config.py data.csv template.pdf output.pdf --type single
+1. 🔧 ИНТЕРАКТИВНЫЙ РЕЖИМ (рекомендуется для новичков):
+   python generate_config.py -i
 
-2. Создание конфигурации для Excel файла (multiple):
-   python generate_config.py data.xlsx template.pdf output.pdf --type multiple --excel-sheet "Sheet1"
+2. Создание конфигурации для CSV файла (single):
+   python generate_config.py data.csv template.pdf output.pdf -t single
 
-3. Создание конфигурации с настройками:
+3. Создание конфигурации для Excel файла (multiple):
+   python generate_config.py data.xlsx template.pdf output.pdf -t multiple -es "Sheet1"
+
+4. Создание конфигурации с настройками (короткие параметры):
+   python generate_config.py data.csv template.pdf output.pdf -t single -dx 15 -dy 10 -ds 20
+
+5. Создание конфигурации с текстом и multiple шаблоном:
+   python generate_config.py data.csv template.pdf output.pdf -t multiple -lh 3 -lv 4 -tc 2 -tfs 14
+
+6. Создание конфигурации с полными параметрами:
    python generate_config.py data.csv template.pdf output.pdf --type single --dm-x 15 --dm-y 10 --dm-size 20
 
 Автор: {__author__}
@@ -172,50 +490,70 @@ Telegram: {__author_telegram__}
         """
     )
     
-    # Обязательные параметры
-    parser.add_argument('data_file', help='Путь к файлу с данными (CSV или Excel)')
-    parser.add_argument('template_pdf', help='Путь к PDF шаблону')
-    parser.add_argument('output_pdf', help='Путь к выходному PDF файлу')
+    # Обязательные параметры (необязательны в интерактивном режиме)
+    parser.add_argument('data_file', nargs='?', help='Путь к файлу с данными (CSV или Excel)')
+    parser.add_argument('template_pdf', nargs='?', help='Путь к PDF шаблону')
+    parser.add_argument('output_pdf', nargs='?', help='Путь к выходному PDF файлу')
     
     # Тип шаблона
-    parser.add_argument('--type', choices=['single', 'multiple'], required=True,
+    parser.add_argument('--type', '-t', choices=['single', 'multiple'],
                        help='Тип шаблона: single (один на этикетку) или multiple (несколько на странице)')
     
     # Параметры DataMatrix
-    parser.add_argument('--dm-x', type=float, default=10, help='Позиция DataMatrix по X (мм)')
-    parser.add_argument('--dm-y', type=float, default=5, help='Позиция DataMatrix по Y (мм)')
-    parser.add_argument('--dm-size', type=float, default=15, help='Размер DataMatrix (мм)')
-    parser.add_argument('--datamatrix-column', type=int, default=0, help='Номер столбца с DataMatrix данными')
+    parser.add_argument('--dm-x', '-dx', type=float, default=10, help='Позиция DataMatrix по X (мм)')
+    parser.add_argument('--dm-y', '-dy', type=float, default=5, help='Позиция DataMatrix по Y (мм)')
+    parser.add_argument('--dm-size', '-ds', type=float, default=15, help='Размер DataMatrix (мм)')
+    parser.add_argument('--datamatrix-column', '-dc', type=int, default=0, help='Номер столбца с DataMatrix данными')
     
     # Параметры текста
-    parser.add_argument('--text-column', type=int, help='Номер столбца с текстом (опционально)')
-    parser.add_argument('--text-start', type=int, default=0, help='Начальная позиция текста')
-    parser.add_argument('--text-length', type=int, help='Длина текста (опционально)')
-    parser.add_argument('--text-font-size', type=int, default=12, help='Размер шрифта текста')
-    parser.add_argument('--text-offset-x', type=float, default=5, help='Смещение текста по X (мм)')
-    parser.add_argument('--text-offset-y', type=float, default=0, help='Смещение текста по Y (мм)')
-    parser.add_argument('--text-color', default='black', help='Цвет текста')
+    parser.add_argument('--text-column', '-tc', type=int, help='Номер столбца с текстом (опционально)')
+    parser.add_argument('--text-start', '-ts', type=int, default=0, help='Начальная позиция текста')
+    parser.add_argument('--text-length', '-tl', type=int, help='Длина текста (опционально)')
+    parser.add_argument('--text-font-size', '-tfs', type=int, default=12, help='Размер шрифта текста')
+    parser.add_argument('--text-offset-x', '-tox', type=float, default=5, help='Смещение текста по X (мм)')
+    parser.add_argument('--text-offset-y', '-toy', type=float, default=0, help='Смещение текста по Y (мм)')
+    parser.add_argument('--text-color', '-tcl', default='black', help='Цвет текста')
     
     # Параметры для multiple шаблона
-    parser.add_argument('--labels-horizontal', type=int, default=2, help='Количество этикеток по горизонтали')
-    parser.add_argument('--labels-vertical', type=int, default=3, help='Количество этикеток по вертикали')
-    parser.add_argument('--label-width', type=float, default=100, help='Ширина этикетки (мм)')
-    parser.add_argument('--label-height', type=float, default=50, help='Высота этикетки (мм)')
-    parser.add_argument('--label-margin-left', type=float, default=10, help='Отступ слева (мм)')
-    parser.add_argument('--label-margin-top', type=float, default=15, help='Отступ сверху (мм)')
-    parser.add_argument('--label-spacing-horizontal', type=float, default=5, help='Расстояние по горизонтали (мм)')
-    parser.add_argument('--label-spacing-vertical', type=float, default=3, help='Расстояние по вертикали (мм)')
+    parser.add_argument('--labels-horizontal', '-lh', type=int, default=2, help='Количество этикеток по горизонтали')
+    parser.add_argument('--labels-vertical', '-lv', type=int, default=3, help='Количество этикеток по вертикали')
+    parser.add_argument('--label-width', '-lw', type=float, default=100, help='Ширина этикетки (мм)')
+    parser.add_argument('--label-height', '-lh2', type=float, default=50, help='Высота этикетки (мм)')
+    parser.add_argument('--label-margin-left', '-lml', type=float, default=10, help='Отступ слева (мм)')
+    parser.add_argument('--label-margin-top', '-lmt', type=float, default=15, help='Отступ сверху (мм)')
+    parser.add_argument('--label-spacing-horizontal', '-lsh', type=float, default=5, help='Расстояние по горизонтали (мм)')
+    parser.add_argument('--label-spacing-vertical', '-lsv', type=float, default=3, help='Расстояние по вертикали (мм)')
     
     # Параметры Excel
-    parser.add_argument('--excel-sheet', default=0, help='Номер или имя листа Excel (по умолчанию: 0)')
+    parser.add_argument('--excel-sheet', '-es', default=0, help='Номер или имя листа Excel (по умолчанию: 0)')
     
     # Качество
-    parser.add_argument('--dpi', type=int, default=300, help='DPI для генерации (по умолчанию: 300)')
+    parser.add_argument('--dpi', '-d', type=int, default=300, help='DPI для генерации (по умолчанию: 300)')
     
     # Выходной файл
     parser.add_argument('-o', '--output', help='Путь к выходному JSON файлу (по умолчанию: config.json)')
     
+    # Интерактивный режим
+    parser.add_argument('-i', '--interactive', action='store_true', 
+                       help='Запустить интерактивный режим создания конфигурации')
+    
     args = parser.parse_args()
+    
+    # Если запрошен интерактивный режим
+    if args.interactive:
+        interactive_mode()
+        return
+    
+    # Проверяем обязательные параметры для неинтерактивного режима
+    if not args.data_file or not args.template_pdf or not args.output_pdf or not args.type:
+        print("❌ Ошибка: В неинтерактивном режиме требуются все обязательные параметры:")
+        print("   - data_file (путь к файлу с данными)")
+        print("   - template_pdf (путь к PDF шаблону)")
+        print("   - output_pdf (путь к выходному PDF файлу)")
+        print("   - --type или -t (тип шаблона: single или multiple)")
+        print()
+        print("💡 Для интерактивного режима используйте: python generate_config.py -i")
+        sys.exit(1)
     
     # Выводим информацию о версии и авторе
     print("=" * 60)
