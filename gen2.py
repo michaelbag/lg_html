@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Генератор этикеток в многостраничный PDF документ с применением шаблона
-Версия 2.15
+Версия 2.16
 
 Поддерживает:
 - CSV файлы с разделителем табуляция
@@ -34,7 +34,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Автор: Michael Bag
-Версия: 2.15
+Версия: 2.16
 """
 
 import argparse
@@ -50,7 +50,7 @@ from io import BytesIO
 from datetime import datetime, timedelta
 
 # Информация о версии
-__version__ = "2.15"
+__version__ = "2.16"
 __author__ = "Michael BAG"
 __author_email__ = "mk@p7net.ru"
 __author_telegram__ = "https://t.me/michaelbag"
@@ -362,20 +362,121 @@ def get_output_filename(output_pdf, template_type, labels_per_page=None):
     return str(Path('output') / filename)
 
 
-def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, text_length=None):
-    """Чтение данных из CSV файла с разделителем табуляция"""
-    data = []
+def clean_csv_field(field):
+    """Очистка поля CSV от экранированных кавычек и лишних символов"""
+    if not field:
+        return ""
+    
+    field = field.strip()
+    
+    # Убираем внешние кавычки если они есть
+    if field.startswith('"') and field.endswith('"'):
+        field = field[1:-1]
+    
+    # Заменяем экранированные кавычки на обычные
+    field = field.replace('""', '"')
+    
+    return field
+
+
+def detect_csv_format(csv_file):
+    """Определение формата CSV файла"""
     try:
         with open(csv_file, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter='\t')
+            first_line = f.readline().strip()
+            if not first_line:
+                return '\t', 'tab'
+            
+            # Проверяем наличие табуляции
+            if '\t' in first_line:
+                return '\t', 'tab'
+            
+            # Проверяем наличие точки с запятой
+            if ';' in first_line:
+                return ';', 'semicolon'
+            
+            # Проверяем наличие запятой
+            if ',' in first_line:
+                return ',', 'comma'
+            
+            # По умолчанию табуляция
+            return '\t', 'tab'
+    except:
+        return '\t', 'tab'
+
+
+def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, text_length=None):
+    """Чтение данных из CSV файла с автоматическим определением формата
+    
+    Поддерживает:
+    - Обычные CSV файлы с разделителем табуляция
+    - CSV файлы, экспортированные из Excel с экранированными кавычками
+    - Файлы с точкой с запятой в качестве разделителя
+    - Файлы с запятой в качестве разделителя
+    - Обработка строк, заключенных в кавычки с точкой с запятой в конце
+    - Обработка чисел в научной нотации
+    """
+    data = []
+    try:
+        # Определяем формат файла
+        delimiter, format_name = detect_csv_format(csv_file)
+        print(f"Определен формат CSV: {format_name} (разделитель: '{delimiter}')")
+        
+        with open(csv_file, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=delimiter, quoting=csv.QUOTE_ALL)
             for i, row in enumerate(reader):
+                if not row or (len(row) == 1 and not row[0].strip()):
+                    continue  # Пропускаем пустые строки
+                
+                # Обработка строки с точкой с запятой в конце (Excel формат)
+                if len(row) == 1 and row[0].endswith(';'):
+                    # Разбиваем строку вручную, учитывая кавычки
+                    line = row[0][:-1]  # Убираем точку с запятой в конце
+                    if line.startswith('"') and line.endswith('"'):
+                        line = line[1:-1]  # Убираем внешние кавычки
+                    
+                    # Разбиваем по табуляции или точке с запятой
+                    if '\t' in line:
+                        row = line.split('\t')
+                    elif ';' in line:
+                        row = line.split(';')
+                    else:
+                        row = [line]
+                
                 if len(row) > datamatrix_column:
-                    datamatrix_data = row[datamatrix_column].strip()
+                    # Очищаем данные от экранированных кавычек
+                    datamatrix_data = clean_csv_field(row[datamatrix_column])
+                    
+                    # Обработка чисел в научной нотации (например, 1,0452E+17)
+                    if datamatrix_data and ('E+' in datamatrix_data or 'E-' in datamatrix_data):
+                        # Проверяем, является ли это числом в научной нотации
+                        is_scientific_notation = False
+                        try:
+                            test_value = datamatrix_data
+                            if ',' in test_value:
+                                # Заменяем запятую на точку для корректного парсинга
+                                test_value = test_value.replace(',', '.')
+                            # Если это число в научной нотации, пропускаем эту строку
+                            float(test_value)
+                            is_scientific_notation = True
+                        except ValueError:
+                            pass  # Не число, продолжаем обработку
+                        
+                        if is_scientific_notation:
+                            print(f"Пропуск строки {i+1}: число в научной нотации ({datamatrix_data})")
+                            continue
+                    
+                    # Дополнительная проверка: если DataMatrix данные начинаются с числа в научной нотации
+                    if datamatrix_data and any(datamatrix_data.startswith(f'{i},') for i in range(1, 10)) and 'E+' in datamatrix_data:
+                        print(f"Пропуск строки {i+1}: DataMatrix данные содержат число в научной нотации ({datamatrix_data})")
+                        continue
+                    
                     if datamatrix_data:
                         # Извлекаем текст если указан столбец
                         text_data = ""
                         if text_column is not None and len(row) > text_column:
-                            text_data = extract_text_fragment(row[text_column].strip(), text_start, text_length)
+                            text_field = clean_csv_field(row[text_column])
+                            text_data = extract_text_fragment(text_field, text_start, text_length)
                         
                         data.append({
                             'row_number': i + 1,
