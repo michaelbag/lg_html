@@ -33,12 +33,17 @@ pip install qrcode[pil]>=7.3.1
 
 ### 4. PDF генерация
 ```bash
-pip install reportlab>=3.6.0
+pip install reportlab>=4.0.0
 ```
 
 ### 5. PDF шаблоны
 ```bash
 pip install PyPDF2>=3.0.0
+```
+
+### 6. Excel поддержка (новое в v2.16)
+```bash
+pip install pandas>=2.0.0 openpyxl>=3.1.0
 ```
 
 ## Системные зависимости для pylibdmtx
@@ -88,6 +93,18 @@ try:
     print('✓ PyPDF2 установлен')
 except ImportError:
     print('✗ PyPDF2 не установлен')
+
+try:
+    import pandas
+    print('✓ pandas установлен (Excel поддержка)')
+except ImportError:
+    print('✗ pandas не установлен (Excel поддержка недоступна)')
+
+try:
+    import openpyxl
+    print('✓ openpyxl установлен (Excel поддержка)')
+except ImportError:
+    print('✗ openpyxl не установлен (Excel поддержка недоступна)')
 "
 ```
 
@@ -105,3 +122,8 @@ except ImportError:
 ### Проблемы с PDF
 - Убедитесь что установлен reportlab
 - Проверьте права на запись в выходную папку
+
+### Проблемы с Excel файлами
+- Убедитесь что установлены pandas и openpyxl
+- Проверьте что Excel файл не поврежден
+- Для больших Excel файлов может потребоваться больше памяти

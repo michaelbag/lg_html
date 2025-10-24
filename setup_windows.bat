@@ -92,11 +92,7 @@ echo ✓ Folder structure created
 REM Check installation
 echo.
 echo Checking installation...
-python -c "import pylibdmtx, qrcode, reportlab, PyPDF2, PIL; print('✓ All modules imported successfully')"
-if %errorlevel% neq 0 (
-    echo WARNING: Some modules were not imported correctly
-    echo Check dependency installation manually
-)
+python test_dependencies.py
 
 echo.
 echo ========================================

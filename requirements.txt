@@ -1,7 +1,23 @@
-charset-normalizer==3.4.3
-pathlib==1.0.1
-pillow==11.3.0
-pylibdmtx==0.1.10
-PyPDF2==3.0.1
-qrcode==8.2
-reportlab==4.4.4
+# Основные зависимости для генерации этикеток
+# Версия: 2.17 (обновлено 17.01.2025)
+
+# Обработка изображений
+Pillow>=10.0.0,<12.0.0
+
+# DataMatrix коды
+pylibdmtx>=0.1.10
+
+# PDF обработка
+PyPDF2>=3.0.1
+reportlab>=4.0.0
+
+# QR коды
+qrcode[pil]>=8.0
+
+# Excel поддержка (новое в v2.16)
+pandas>=2.0.0,<3.0.0
+openpyxl>=3.1.0,<4.0.0
+
+# Утилиты
+charset-normalizer>=3.0.0
+pathlib>=1.0.1

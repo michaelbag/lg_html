@@ -112,7 +112,7 @@ echo "✓ Folder structure created"
 # Check installation
 echo
 echo "Checking installation..."
-python -c "import pylibdmtx, qrcode, reportlab, PyPDF2, PIL; print('✓ All modules imported successfully')" || echo "WARNING: Some modules were not imported correctly"
+python test_dependencies.py
 
 # Create activation script
 echo

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Генератор этикеток в многостраничный PDF документ с применением шаблона
-Версия 2.16
+Версия 2.17
 
 Поддерживает:
 - CSV файлы с разделителем табуляция
@@ -49,8 +49,15 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from datetime import datetime, timedelta
 
+# Импорт для работы с Excel файлами
+try:
+    import pandas as pd
+    EXCEL_AVAILABLE = True
+except ImportError:
+    EXCEL_AVAILABLE = False
+
 # Информация о версии
-__version__ = "2.16"
+__version__ = "2.17"
 __author__ = "Michael BAG"
 __author_email__ = "mk@p7net.ru"
 __author_telegram__ = "https://t.me/michaelbag"
@@ -261,6 +268,12 @@ def find_input_file(filename, directory='input_data', file_type=None):
                 if file.is_file():
                     print(f"Найден CSV файл: {file}")
                     return str(file)
+        elif file_type == 'xlsx':
+            # Ищем Excel файлы
+            for file in directory_path.glob("*.xlsx"):
+                if file.is_file():
+                    print(f"Найден Excel файл: {file}")
+                    return str(file)
         elif file_type == 'pdf':
             # Ищем PDF файлы
             for file in directory_path.glob("*.pdf"):
@@ -405,6 +418,85 @@ def detect_csv_format(csv_file):
         return '\t', 'tab'
 
 
+def read_excel_data(excel_file, datamatrix_column, text_column=None, text_start=0, text_length=None, max_rows=None, sheet_name=0):
+    """Чтение данных из Excel файла (.xlsx)
+    
+    Поддерживает:
+    - Excel файлы .xlsx
+    - Автоматическое определение листа (первый лист по умолчанию)
+    - Ограничение количества строк для тестирования
+    - Обработка пустых строк и ячеек
+    """
+    if not EXCEL_AVAILABLE:
+        print("Ошибка: Для работы с Excel файлами требуется библиотека pandas. Установите: pip install pandas openpyxl")
+        return []
+    
+    data = []
+    try:
+        print(f"Чтение Excel файла: {excel_file}")
+        if sheet_name == 0:
+            print("Используется первый лист")
+        else:
+            print(f"Используется лист: {sheet_name}")
+        
+        # Читаем Excel файл
+        df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+        
+        # Ограничиваем количество строк если указано
+        if max_rows is not None:
+            df = df.head(max_rows)
+            print(f"ТЕСТОВЫЙ РЕЖИМ: Ограничение до {max_rows} строк")
+        
+        print(f"Найдено {len(df)} строк в Excel файле")
+        
+        for i, row in df.iterrows():
+            # Пропускаем пустые строки
+            if row.isna().all():
+                continue
+            
+            # Преобразуем строку в список, заменяя NaN на пустые строки
+            row_list = [str(cell) if pd.notna(cell) else "" for cell in row]
+            
+            if len(row_list) > datamatrix_column:
+                # Очищаем данные от лишних пробелов
+                datamatrix_data = str(row_list[datamatrix_column]).strip()
+                
+                # Обработка чисел в научной нотации
+                if datamatrix_data and ('E+' in datamatrix_data or 'E-' in datamatrix_data):
+                    try:
+                        float(datamatrix_data)
+                        print(f"Пропуск строки {i+1}: число в научной нотации ({datamatrix_data})")
+                        continue
+                    except ValueError:
+                        pass  # Не число, продолжаем обработку
+                
+                if datamatrix_data and datamatrix_data != 'nan':
+                    # Извлекаем текст если указан столбец
+                    text_data = ""
+                    if text_column is not None and len(row_list) > text_column:
+                        text_field = str(row_list[text_column]).strip()
+                        if text_field != 'nan':
+                            text_data = extract_text_fragment(text_field, text_start, text_length)
+                    
+                    data.append({
+                        'row_number': i + 1,
+                        'datamatrix_data': datamatrix_data,
+                        'text_data': text_data,
+                        'full_row': row_list
+                    })
+            else:
+                print(f"Пропуск строки {i+1}: недостаточно столбцов (найдено {len(row_list)}, требуется {datamatrix_column+1})")
+        
+        print(f"Прочитано {len(data)} строк с данными для DataMatrix из файла")
+        if text_column is not None:
+            print(f"Извлечение текста из столбца {text_column}, позиция {text_start}, длина {text_length or 'до конца'}")
+        return data
+        
+    except Exception as e:
+        print(f"Ошибка при чтении Excel файла: {e}")
+        return []
+
+
 def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, text_length=None, max_rows=None):
     """Чтение данных из CSV файла с автоматическим определением формата
     
@@ -492,7 +584,7 @@ def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, t
                 else:
                     print(f"Пропуск строки {i+1}: недостаточно столбцов (найдено {len(row)}, требуется {datamatrix_column+1})")
         
-        print(f"Прочитано {len(data)} строк с данными для DataMatrix из CSV файла")
+        print(f"Прочитано {len(data)} строк с данными для DataMatrix из файла")
         if text_column is not None:
             print(f"Извлечение текста из столбца {text_column}, позиция {text_start}, длина {text_length or 'до конца'}")
         return data
@@ -835,7 +927,7 @@ Telegram: {__author_telegram__}
     )
     
     # Обязательные параметры
-    parser.add_argument('csv_file', nargs='?', help='Путь к CSV файлу с данными (разделитель - табуляция). Если не указан, ищется в папке input_data')
+    parser.add_argument('data_file', nargs='?', help='Путь к файлу с данными (CSV или Excel). Если не указан, ищется в папке input_data')
     parser.add_argument('template_pdf', nargs='?', help='Путь к PDF шаблону. Если не указан, ищется в папке input_templates')
     parser.add_argument('output_pdf', nargs='?', help='Путь к выходному PDF файлу. Если не указан, создается в папке output')
     
@@ -871,13 +963,13 @@ Telegram: {__author_telegram__}
     parser.add_argument('-ds', '--dm-size', type=float, required=False,
                        help='Размер DataMatrix кода в мм')
     
-    # Параметры CSV
+    # Параметры файла данных
     parser.add_argument('-dc', '--datamatrix-column', type=int, default=0,
-                       help='Номер столбца CSV файла для DataMatrix (начиная с 0)')
+                       help='Номер столбца файла данных для DataMatrix (начиная с 0)')
     
     # Параметры текстового поля
     parser.add_argument('-tc', '--text-column', type=int, default=None,
-                       help='Номер столбца CSV файла для текста (начиная с 0)')
+                       help='Номер столбца файла данных для текста (начиная с 0)')
     parser.add_argument('-ts', '--text-start', type=int, default=0,
                        help='Начальная позиция для извлечения текста (начиная с 0)')
     parser.add_argument('-tl', '--text-length', type=int, default=None,
@@ -896,6 +988,8 @@ Telegram: {__author_telegram__}
                        help='DPI для генерации изображений (по умолчанию: 300)')
     parser.add_argument('--max-rows', type=int, default=None,
                        help='Максимальное количество строк для обработки (для тестирования). Если не указано, обрабатываются все строки')
+    parser.add_argument('--excel-sheet', type=str, default=0,
+                       help='Номер или имя листа Excel файла (по умолчанию: 0 - первый лист)')
     parser.add_argument('-c', '--config', type=str, default=None,
                        help='Путь к файлу конфигурации JSON. Если указан, параметры загружаются из файла')
     parser.add_argument('--show-configs', action='store_true',
@@ -932,7 +1026,7 @@ Telegram: {__author_telegram__}
     # Применяем конфигурацию к аргументам
     if config:
         # Сначала сохраняем значения аргументов командной строки
-        original_csv_file = args.csv_file
+        original_data_file = args.data_file
         original_template_pdf = args.template_pdf
         original_output_pdf = args.output_pdf
         
@@ -943,9 +1037,9 @@ Telegram: {__author_telegram__}
                 print(f"Параметр {key}: {value}")
         
         # Восстанавливаем аргументы командной строки если они были указаны
-        if original_csv_file is not None:
-            args.csv_file = original_csv_file
-            print(f"CSV файл из командной строки: {args.csv_file}")
+        if original_data_file is not None:
+            args.data_file = original_data_file
+            print(f"Файл данных из командной строки: {args.data_file}")
         
         if original_template_pdf is not None:
             args.template_pdf = original_template_pdf
@@ -966,13 +1060,24 @@ Telegram: {__author_telegram__}
         sys.exit(1)
     
     # Определяем пути к файлам
-    csv_file = find_input_file(args.csv_file, 'input_data', 'csv')
+    data_file = None
+    file_type = None
+    
+    if args.data_file:
+        # Проверяем расширение файла
+        if args.data_file.lower().endswith(('.xlsx', '.xls')):
+            data_file = find_input_file(args.data_file, 'input_data', 'xlsx')
+            file_type = 'excel'
+        else:
+            data_file = find_input_file(args.data_file, 'input_data', 'csv')
+            file_type = 'csv'
+    
     template_pdf = find_input_file(args.template_pdf, 'input_templates', 'pdf')
     
     # Проверяем существование файлов
-    if not csv_file:
-        print(f"Ошибка: CSV файл не найден: {args.csv_file}")
-        print("Поместите CSV файл в папку input_data или укажите полный путь")
+    if not data_file:
+        print(f"Ошибка: Файл данных не найден: {args.data_file}")
+        print("Поместите файл данных в папку input_data или укажите полный путь")
         sys.exit(1)
     
     if not template_pdf:
@@ -980,7 +1085,7 @@ Telegram: {__author_telegram__}
         print("Поместите PDF шаблон в папку input_templates или укажите полный путь")
         sys.exit(1)
     
-    print(f"Используется CSV файл: {csv_file}")
+    print(f"Используется файл данных: {data_file} ({file_type})")
     print(f"Используется шаблон: {template_pdf}")
     
     # Проверяем доступность библиотек
@@ -996,13 +1101,27 @@ Telegram: {__author_telegram__}
         print("Ошибка: Не установлены библиотеки для генерации кодов. Установите: pip install pylibdmtx или pip install qrcode[pil]")
         sys.exit(1)
     
-    # Читаем данные из CSV
-    if args.max_rows:
-        print(f"ТЕСТОВЫЙ РЕЖИМ: Ограничение до {args.max_rows} строк")
-    csv_data = read_csv_data(csv_file, args.datamatrix_column, 
-                           args.text_column, args.text_start, args.text_length, args.max_rows)
+    # Читаем данные из файла (CSV или Excel)
+    if file_type == 'excel':
+        if not EXCEL_AVAILABLE:
+            print("Ошибка: Для работы с Excel файлами требуется библиотека pandas. Установите: pip install pandas openpyxl")
+            sys.exit(1)
+        
+        # Преобразуем sheet_name в число если это возможно
+        sheet_name = args.excel_sheet
+        try:
+            sheet_name = int(sheet_name)
+        except ValueError:
+            pass  # Оставляем как строку для имени листа
+        
+        csv_data = read_excel_data(data_file, args.datamatrix_column, 
+                                 args.text_column, args.text_start, args.text_length, args.max_rows, sheet_name)
+    else:
+        csv_data = read_csv_data(data_file, args.datamatrix_column, 
+                               args.text_column, args.text_start, args.text_length, args.max_rows)
+    
     if not csv_data:
-        print("Ошибка: Не удалось прочитать данные из CSV файла")
+        print(f"Ошибка: Не удалось прочитать данные из {file_type} файла")
         sys.exit(1)
     
     # Подготавливаем параметры для множественного шаблона
@@ -1027,7 +1146,7 @@ Telegram: {__author_telegram__}
     
     if success:
         print(f"Успешно создан многостраничный PDF: {output_pdf}")
-        print(f"Обработано {len(csv_data)} записей из CSV файла")
+        print(f"Обработано {len(csv_data)} записей из файла данных")
     else:
         print("Ошибка при создании PDF файла")
         sys.exit(1)

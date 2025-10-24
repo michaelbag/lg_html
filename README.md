@@ -4,7 +4,7 @@
 
 Генерация этикеток с DataMatrix (в т.ч. GS1 DataMatrix) в многостраничные PDF с использованием шаблонов.
 
-- `gen2.py` — генератор этикеток с шаблонами и конфигами (актуальная версия: v2.15)
+- `gen2.py` — генератор этикеток с шаблонами и конфигами (актуальная версия: v2.17)
 
 ## Установка
 
@@ -88,13 +88,16 @@ lg_html/
 
 ### Быстрый старт
 
-1. Поместите CSV файл в папку `input_data/`
+1. Поместите файл с данными (CSV или Excel) в папку `input_data/`
 2. Поместите PDF шаблон в папку `input_templates/`
 3. Запустите скрипт:
 
 ```bash
 # С конфигурационным файлом (рекомендуется)
 python gen2.py -c single_template.json
+
+# Генерация конфигурации (новое в v2.16)
+python generate_config.py data.xlsx template.pdf output.pdf --type single
 
 # Или с параметрами командной строки
 python gen2.py -t single -dx 10 -dy 5 -ds 15 -dc 0
@@ -145,12 +148,17 @@ python gen2.py -c имя_конфигурации.json
 - `-ds, --dm-size` - размер DataMatrix кода в мм
 
 #### Пути к файлам (можно указывать в конфиге):
-- `csv_file` — путь к CSV (если не указан, ищется в `input_data/`)
+- `csv_file` — путь к CSV или Excel файлу (если не указан, ищется в `input_data/`)
 - `template_pdf` — путь к PDF шаблону (если не указан, ищется в `input_templates/`)
 - `output_pdf` — путь к выходному PDF (если не указан, создается в `output/`)
 
+#### Поддерживаемые форматы данных:
+- **CSV файлы** (.csv) — с разделителем табуляция, точка с запятой или запятая
+- **Excel файлы** (.xlsx, .xls) — с поддержкой выбора листа
+
 #### Тестирование:
 - `--max-rows N` — ограничить обработку до N строк (для быстрого тестирования)
+- `--excel-sheet N` — указать номер или имя листа Excel файла (по умолчанию: 0)
 
 Примечание: аргументы командной строки имеют приоритет над значениями в конфиге.
 
@@ -233,16 +241,69 @@ python gen2.py data_copy.csv multi_maket.pdf out_multi_maket.pdf \
 python gen2.py data.csv maket.pdf test.pdf -t single -dx 10 -dy 5 -ds 15 --max-rows 10
 ```
 
-## Формат CSV файла
+#### 8. Работа с Excel файлами
+```bash
+# Обработка Excel файла (первый лист)
+python gen2.py data.xlsx maket.pdf output.pdf -t single -dx 10 -dy 5 -ds 15 -dc 0
+
+# Обработка конкретного листа Excel файла
+python gen2.py data.xlsx maket.pdf output.pdf -t single -dx 10 -dy 5 -ds 15 -dc 0 --excel-sheet "Sheet2"
+
+# Тестирование Excel файла с ограничением строк
+python gen2.py data.xlsx maket.pdf test.pdf -t single -dx 10 -dy 5 -ds 15 --max-rows 5
+```
+
+### Генератор конфигураций (новое в v2.16)
+
+Для упрощения создания конфигурационных файлов доступен специальный генератор:
+
+#### Создание конфигурации для Excel файла
+```bash
+# Single шаблон для Excel файла
+python generate_config.py data.xlsx template.pdf output.pdf --type single --excel-sheet 0
+
+# Multiple шаблон для Excel файла с настройками
+python generate_config.py data.xlsx template.pdf output.pdf --type multiple \
+    --labels-horizontal 2 --labels-vertical 3 --dm-x 20 --dm-y 10 --dm-size 15
+```
+
+#### Создание конфигурации для CSV файла
+```bash
+# Single шаблон для CSV файла
+python generate_config.py data.csv template.pdf output.pdf --type single
+
+# Multiple шаблон с детальными настройками
+python generate_config.py data.csv template.pdf output.pdf --type multiple \
+    --labels-horizontal 2 --labels-vertical 3 --label-width 100 --label-height 50 \
+    --dm-x 20 --dm-y 10 --dm-size 15 --text-column 2 --text-start 0 --text-length 20
+```
+
+#### Использование созданной конфигурации
+```bash
+# Запуск с созданной конфигурацией
+python gen2.py -c config.json
+
+# Тестирование с ограничением строк
+python gen2.py -c config.json --max-rows 5
+```
+
+## Форматы файлов данных
 
 ### Поддерживаемые форматы
 
-Скрипт автоматически определяет формат CSV файла и поддерживает:
+Скрипт автоматически определяет формат файла и поддерживает:
 
+#### CSV файлы (.csv)
 1. **Обычные CSV файлы** с разделителем табуляция
 2. **CSV файлы из Excel** с экранированными кавычками и точкой с запятой в конце строки
 3. **Файлы с разделителем точка с запятой** (автоопределение)
 4. **Файлы с разделителем запятая** (автоопределение)
+
+#### Excel файлы (.xlsx, .xls)
+1. **Excel файлы** с автоматическим определением листа
+2. **Поддержка выбора листа** по номеру или имени
+3. **Обработка пустых ячеек** и строк
+4. **Совместимость** с различными версиями Excel
 
 ### Примеры форматов
 

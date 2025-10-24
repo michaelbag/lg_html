@@ -14,6 +14,10 @@
 pip install -r requirements.txt
 ```
 
+**Новое в v2.16:** Поддержка Excel файлов (.xlsx, .xls)
+- Автоматически устанавливаются pandas и openpyxl
+- Поддержка как CSV, так и Excel файлов
+
 ### 3. Установка системных библиотек для DataMatrix
 
 #### Вариант A: Через conda (рекомендуется)
@@ -51,6 +55,7 @@ python test_datamatrix.py
 - ✅ Работу DataMatrix генерации
 - ✅ Fallback на QR коды
 - ✅ Все остальные зависимости
+- ✅ Excel поддержку (pandas, openpyxl)
 
 ### Ожидаемый вывод при успешной установке:
 ```
@@ -95,17 +100,22 @@ conda install -c conda-forge pylibdmtx
 
 ### Базовое использование
 ```cmd
-python main.py data.csv output_folder
+python gen2.py data.csv template.pdf output.pdf
+```
+
+### С Excel файлом (новое в v2.16)
+```cmd
+python gen2.py data.xlsx template.pdf output.pdf
 ```
 
 ### С конфигурацией
 ```cmd
-python main.py data.csv output_folder --config config.json
+python gen2.py -c config.json
 ```
 
 ### Только QR коды (без DataMatrix)
 ```cmd
-python main.py data.csv output_folder --no-pdf
+python gen2.py data.csv template.pdf output.pdf --no-datamatrix
 ```
 
 ## Альтернативные способы установки
@@ -119,6 +129,7 @@ conda activate labelgen
 # Установите зависимости
 conda install -c conda-forge pillow reportlab pypdf2 qrcode
 conda install -c conda-forge pylibdmtx  # Для DataMatrix
+conda install -c conda-forge pandas openpyxl  # Для Excel поддержки
 ```
 
 ### 2. Через Chocolatey
