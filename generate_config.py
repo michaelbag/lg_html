@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Генератор конфигурационных файлов для генератора этикеток v2.16
+Генератор конфигурационных файлов для генератора этикеток v2.17
+Версия: 1.0
 Поддерживает создание конфигураций для CSV и Excel файлов
 """
 
@@ -123,7 +124,7 @@ def detect_file_type(file_path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Генератор конфигурационных файлов для генератора этикеток v2.16",
+        description="Генератор конфигурационных файлов для генератора этикеток v2.17 (версия 1.0)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Примеры использования:
@@ -183,6 +184,13 @@ def main():
     parser.add_argument('-o', '--output', help='Путь к выходному JSON файлу (по умолчанию: config.json)')
     
     args = parser.parse_args()
+    
+    # Выводим информацию о версии
+    print("=" * 60)
+    print("Генератор конфигурационных файлов v1.0")
+    print("Для генератора этикеток v2.17")
+    print("=" * 60)
+    print()
     
     # Определяем тип файла данных
     file_type = detect_file_type(args.data_file)
