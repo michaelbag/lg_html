@@ -34,7 +34,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Автор: Michael Bag
-Версия: 2.16
+Версия: 2.17
 """
 
 import argparse
