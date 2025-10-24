@@ -148,6 +148,10 @@ python gen2.py -c имя_конфигурации.json
 - `csv_file` — путь к CSV (если не указан, ищется в `input_data/`)
 - `template_pdf` — путь к PDF шаблону (если не указан, ищется в `input_templates/`)
 - `output_pdf` — путь к выходному PDF (если не указан, создается в `output/`)
+
+#### Тестирование:
+- `--max-rows N` — ограничить обработку до N строк (для быстрого тестирования)
+
 Примечание: аргументы командной строки имеют приоритет над значениями в конфиге.
 
 #### Для множественного шаблона:
@@ -221,6 +225,12 @@ python gen2.py data_copy.csv multi_maket.pdf out_multi_maket.pdf \
     -t multiple -lh 3 -lv 6 -lw 55 -lh2 37 -lml 22 -lmt 30 \
     -lsh 5 -lsv 3 -dx 38 -dy 15 -ds 17 -tc 0 -ts 32 -tl 10 \
     -tfs 7 -tox 1 -toy 18 -tcl black
+```
+
+#### 7. Тестирование с ограничением строк
+```bash
+# Обработать только первые 10 строк для быстрого тестирования
+python gen2.py data.csv maket.pdf test.pdf -t single -dx 10 -dy 5 -ds 15 --max-rows 10
 ```
 
 ## Формат CSV файла

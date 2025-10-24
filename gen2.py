@@ -405,7 +405,7 @@ def detect_csv_format(csv_file):
         return '\t', 'tab'
 
 
-def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, text_length=None):
+def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, text_length=None, max_rows=None):
     """Чтение данных из CSV файла с автоматическим определением формата
     
     Поддерживает:
@@ -415,6 +415,7 @@ def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, t
     - Файлы с запятой в качестве разделителя
     - Обработка строк, заключенных в кавычки с точкой с запятой в конце
     - Обработка чисел в научной нотации
+    - Ограничение количества строк для тестирования (max_rows)
     """
     data = []
     try:
@@ -425,6 +426,10 @@ def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, t
         with open(csv_file, 'r', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter=delimiter, quoting=csv.QUOTE_ALL)
             for i, row in enumerate(reader):
+                # Ограничение количества строк для тестирования
+                if max_rows is not None and len(data) >= max_rows:
+                    print(f"Достигнуто ограничение в {max_rows} строк. Обработка остановлена.")
+                    break
                 if not row or (len(row) == 1 and not row[0].strip()):
                     continue  # Пропускаем пустые строки
                 
@@ -889,6 +894,8 @@ Telegram: {__author_telegram__}
     # Дополнительные параметры
     parser.add_argument('-d', '--dpi', type=int, default=300,
                        help='DPI для генерации изображений (по умолчанию: 300)')
+    parser.add_argument('--max-rows', type=int, default=None,
+                       help='Максимальное количество строк для обработки (для тестирования). Если не указано, обрабатываются все строки')
     parser.add_argument('-c', '--config', type=str, default=None,
                        help='Путь к файлу конфигурации JSON. Если указан, параметры загружаются из файла')
     parser.add_argument('--show-configs', action='store_true',
@@ -990,8 +997,10 @@ Telegram: {__author_telegram__}
         sys.exit(1)
     
     # Читаем данные из CSV
+    if args.max_rows:
+        print(f"ТЕСТОВЫЙ РЕЖИМ: Ограничение до {args.max_rows} строк")
     csv_data = read_csv_data(csv_file, args.datamatrix_column, 
-                           args.text_column, args.text_start, args.text_length)
+                           args.text_column, args.text_start, args.text_length, args.max_rows)
     if not csv_data:
         print("Ошибка: Не удалось прочитать данные из CSV файла")
         sys.exit(1)
