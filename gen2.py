@@ -1103,6 +1103,13 @@ Telegram: {__author_telegram__}
     
     # Читаем данные из файла (CSV или Excel)
     if file_type == 'excel':
+        print("⚠️  ВНИМАНИЕ: Обнаружен Excel файл")
+        print("   Поддержка Excel находится в режиме ТЕСТИРОВАНИЯ и РАЗРАБОТКИ")
+        print("   НЕ РЕКОМЕНДУЕТСЯ для производственного использования")
+        print("   Требуется дополнить коды специальным символом <gs>")
+        print("   Для работы используйте CSV файлы")
+        print()
+        
         if not EXCEL_AVAILABLE:
             print("Ошибка: Для работы с Excel файлами требуется библиотека pandas. Установите: pip install pandas openpyxl")
             sys.exit(1)

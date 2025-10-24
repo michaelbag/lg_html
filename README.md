@@ -241,8 +241,12 @@ python gen2.py data_copy.csv multi_maket.pdf out_multi_maket.pdf \
 python gen2.py data.csv maket.pdf test.pdf -t single -dx 10 -dy 5 -ds 15 --max-rows 10
 ```
 
-#### 8. Работа с Excel файлами
+#### 8. Работа с Excel файлами (⚠️ ТЕСТИРОВАНИЕ)
 ```bash
+# ⚠️ ВНИМАНИЕ: Поддержка Excel находится в режиме ТЕСТИРОВАНИЯ
+# НЕ РЕКОМЕНДУЕТСЯ для производственного использования
+# Требуется дополнить коды специальным символом <gs>
+
 # Обработка Excel файла (первый лист)
 python gen2.py data.xlsx maket.pdf output.pdf -t single -dx 10 -dy 5 -ds 15 -dc 0
 
@@ -257,8 +261,11 @@ python gen2.py data.xlsx maket.pdf test.pdf -t single -dx 10 -dy 5 -ds 15 --max-
 
 Для упрощения создания конфигурационных файлов доступен специальный генератор:
 
-#### Создание конфигурации для Excel файла
+#### Создание конфигурации для Excel файла (⚠️ ТЕСТИРОВАНИЕ)
 ```bash
+# ⚠️ ВНИМАНИЕ: Поддержка Excel находится в режиме ТЕСТИРОВАНИЯ
+# НЕ РЕКОМЕНДУЕТСЯ для производственного использования
+
 # Single шаблон для Excel файла
 python generate_config.py data.xlsx template.pdf output.pdf --type single --excel-sheet 0
 
