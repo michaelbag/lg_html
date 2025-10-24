@@ -4,6 +4,25 @@
 Версия скрипта: 1.0
 Версия проекта: 2.17
 Поддерживает создание конфигураций для CSV и Excel файлов
+
+Copyright (C) 2025 Michael Bag
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+Автор: Michael Bag
+Версия: 1.0
 """
 
 import json
@@ -124,10 +143,17 @@ def detect_file_type(file_path):
         return "unknown"
 
 def main():
+    # Информация о версии и авторе
+    __version__ = "1.0"
+    __author__ = "Michael BAG"
+    __author_email__ = "mk@p7net.ru"
+    __author_telegram__ = "https://t.me/michaelbag"
+    __description__ = "Генератор конфигурационных файлов для генератора этикеток"
+    
     parser = argparse.ArgumentParser(
-        description="Генератор конфигурационных файлов для генератора этикеток v2.17 (скрипт v1.0, проект v2.17)",
+        description=f"{__description__} v{__version__} (проект v2.17)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Примеры использования:
 
 1. Создание конфигурации для CSV файла (single):
@@ -138,6 +164,11 @@ def main():
 
 3. Создание конфигурации с настройками:
    python generate_config.py data.csv template.pdf output.pdf --type single --dm-x 15 --dm-y 10 --dm-size 20
+
+Автор: {__author__}
+E-mail: {__author_email__}
+Telegram: {__author_telegram__}
+Версия: {__version__}
         """
     )
     
@@ -186,10 +217,11 @@ def main():
     
     args = parser.parse_args()
     
-    # Выводим информацию о версии
+    # Выводим информацию о версии и авторе
     print("=" * 60)
-    print("Генератор конфигурационных файлов v1.0")
-    print("Версия проекта: 2.17")
+    print(f"{__description__} v{__version__}")
+    print(f"Автор: {__author__}")
+    print(f"Версия проекта: 2.17")
     print("=" * 60)
     print()
     
