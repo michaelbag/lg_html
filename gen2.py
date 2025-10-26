@@ -57,7 +57,7 @@ except ImportError:
     EXCEL_AVAILABLE = False
 
 # Информация о версии
-__version__ = "2.17"
+__version__ = "2.18"
 __author__ = "Michael BAG"
 __author_email__ = "mk@p7net.ru"
 __author_telegram__ = "https://t.me/michaelbag"
@@ -150,6 +150,16 @@ def extract_text_fragment(text, start_pos, length=None):
     else:
         end_pos = start_pos + length
         return text[start_pos:end_pos]
+
+
+def clean_text_field(text):
+    """Очистка текстового поля - кавычки НЕ удаляются, они являются частью данных"""
+    if not text:
+        return ""
+    
+    # Кавычки НЕ удаляем - они являются частью данных
+    # CSV парсер уже правильно обработал экранированные кавычки
+    return text
 
 
 def setup_directories():
@@ -386,18 +396,17 @@ def get_output_filename(output_pdf, template_type, labels_per_page=None):
 
 
 def clean_csv_field(field):
-    """Очистка поля CSV от экранированных кавычек и лишних символов"""
+    """Очистка поля CSV - CSV парсер уже правильно обработал экранированные кавычки"""
     if not field:
         return ""
     
     field = field.strip()
     
-    # Убираем внешние кавычки если они есть
+    # CSV парсер уже правильно обработал экранированные кавычки
+    # Нам не нужно дополнительно их обрабатывать
+    # Просто убираем внешние кавычки если они есть
     if field.startswith('"') and field.endswith('"'):
         field = field[1:-1]
-    
-    # Заменяем экранированные кавычки на обычные
-    field = field.replace('""', '"')
     
     return field
 
@@ -468,29 +477,38 @@ def read_excel_data(excel_file, datamatrix_column, text_column=None, text_start=
             row_list = [str(cell) if pd.notna(cell) else "" for cell in row]
             
             if len(row_list) > datamatrix_column:
-                # Очищаем данные от лишних пробелов
-                datamatrix_data = str(row_list[datamatrix_column]).strip()
+                # Получаем исходные данные для DataMatrix
+                raw_datamatrix_data = str(row_list[datamatrix_column]).strip()
+                
+                # Очищаем данные для проверок
+                cleaned_datamatrix_data = raw_datamatrix_data
                 
                 # Обработка чисел в научной нотации
-                if datamatrix_data and ('E+' in datamatrix_data or 'E-' in datamatrix_data):
+                if cleaned_datamatrix_data and ('E+' in cleaned_datamatrix_data or 'E-' in cleaned_datamatrix_data):
                     try:
-                        float(datamatrix_data)
-                        print(f"Пропуск строки {i+1}: число в научной нотации ({datamatrix_data})")
+                        float(cleaned_datamatrix_data)
+                        print(f"Пропуск строки {i+1}: число в научной нотации ({cleaned_datamatrix_data})")
                         continue
                     except ValueError:
                         pass  # Не число, продолжаем обработку
                 
-                if datamatrix_data and datamatrix_data != 'nan':
+                if cleaned_datamatrix_data and cleaned_datamatrix_data != 'nan':
                     # Извлекаем текст если указан столбец
                     text_data = ""
                     if text_column is not None and len(row_list) > text_column:
                         text_field = str(row_list[text_column]).strip()
                         if text_field != 'nan':
                             text_data = extract_text_fragment(text_field, text_start, text_length)
+                    else:
+                        # Если text_column не указан, извлекаем из того же столбца что и DataMatrix
+                        text_data = extract_text_fragment(cleaned_datamatrix_data, text_start, text_length)
+                    
+                    # Очищаем текстовое поле от кавычек для корректного отображения
+                    text_data = clean_text_field(text_data)
                     
                     data.append({
                         'row_number': i + 1,
-                        'datamatrix_data': datamatrix_data,
+                        'datamatrix_data': raw_datamatrix_data,  # Используем исходные данные
                         'text_data': text_data,
                         'full_row': row_list
                     })
@@ -551,15 +569,18 @@ def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, t
                         row = [line]
                 
                 if len(row) > datamatrix_column:
-                    # Очищаем данные от экранированных кавычек
-                    datamatrix_data = clean_csv_field(row[datamatrix_column])
+                    # Получаем исходные данные для DataMatrix (без очистки кавычек)
+                    raw_datamatrix_data = row[datamatrix_column]
+                    
+                    # Очищаем данные от экранированных кавычек для проверок
+                    cleaned_datamatrix_data = clean_csv_field(raw_datamatrix_data)
                     
                     # Обработка чисел в научной нотации (например, 1,0452E+17)
-                    if datamatrix_data and ('E+' in datamatrix_data or 'E-' in datamatrix_data):
+                    if cleaned_datamatrix_data and ('E+' in cleaned_datamatrix_data or 'E-' in cleaned_datamatrix_data):
                         # Проверяем, является ли это числом в научной нотации
                         is_scientific_notation = False
                         try:
-                            test_value = datamatrix_data
+                            test_value = cleaned_datamatrix_data
                             if ',' in test_value:
                                 # Заменяем запятую на точку для корректного парсинга
                                 test_value = test_value.replace(',', '.')
@@ -570,24 +591,34 @@ def read_csv_data(csv_file, datamatrix_column, text_column=None, text_start=0, t
                             pass  # Не число, продолжаем обработку
                         
                         if is_scientific_notation:
-                            print(f"Пропуск строки {i+1}: число в научной нотации ({datamatrix_data})")
+                            print(f"Пропуск строки {i+1}: число в научной нотации ({cleaned_datamatrix_data})")
                             continue
                     
                     # Дополнительная проверка: если DataMatrix данные начинаются с числа в научной нотации
-                    if datamatrix_data and any(datamatrix_data.startswith(f'{i},') for i in range(1, 10)) and 'E+' in datamatrix_data:
-                        print(f"Пропуск строки {i+1}: DataMatrix данные содержат число в научной нотации ({datamatrix_data})")
+                    if cleaned_datamatrix_data and any(cleaned_datamatrix_data.startswith(f'{i},') for i in range(1, 10)) and 'E+' in cleaned_datamatrix_data:
+                        print(f"Пропуск строки {i+1}: DataMatrix данные содержат число в научной нотации ({cleaned_datamatrix_data})")
                         continue
                     
-                    if datamatrix_data:
-                        # Извлекаем текст если указан столбец
+                    if cleaned_datamatrix_data:
+                        # Извлекаем текст из очищенных данных DataMatrix
                         text_data = ""
-                        if text_column is not None and len(row) > text_column:
-                            text_field = clean_csv_field(row[text_column])
-                            text_data = extract_text_fragment(text_field, text_start, text_length)
+                        if text_column is not None:
+                            # Если text_column указан, используем его
+                            if len(row) > text_column:
+                                text_field = clean_csv_field(row[text_column])
+                                text_data = extract_text_fragment(text_field, text_start, text_length)
+                            else:
+                                print(f"Предупреждение: строка {i+1} не содержит столбец {text_column} для текста")
+                        else:
+                            # Если text_column не указан, извлекаем из того же столбца что и DataMatrix
+                            text_data = extract_text_fragment(cleaned_datamatrix_data, text_start, text_length)
+                        
+                        # Очищаем текстовое поле от кавычек для корректного отображения
+                        text_data = clean_text_field(text_data)
                         
                         data.append({
                             'row_number': i + 1,
-                            'datamatrix_data': datamatrix_data,
+                            'datamatrix_data': raw_datamatrix_data,  # Используем исходные данные с символами <gs>
                             'text_data': text_data,
                             'full_row': row
                         })
