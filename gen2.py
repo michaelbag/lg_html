@@ -5,7 +5,7 @@
 Версия 2.17
 
 Поддерживает:
-- CSV файлы с разделителем табуляция
+- CSV файлы с разделителем табуляция (ОБЯЗАТЕЛЬНО в кодировке UTF-8)
 - PDF шаблоны (один шаблон на этикетку или несколько этикеток на шаблоне)
 - Позиционирование DataMatrix кода по координатам
 - Многостраничный PDF документ
@@ -968,7 +968,7 @@ Telegram: {__author_telegram__}
     )
     
     # Обязательные параметры
-    parser.add_argument('data_file', nargs='?', help='Путь к файлу с данными (CSV или Excel). Если не указан, ищется в папке input_data')
+    parser.add_argument('data_file', nargs='?', help='Путь к файлу с данными (CSV или Excel). Если не указан, ищется в папке input_data. ВАЖНО: CSV файлы должны быть в кодировке UTF-8')
     parser.add_argument('template_pdf', nargs='?', help='Путь к PDF шаблону. Если не указан, ищется в папке input_templates')
     parser.add_argument('output_pdf', nargs='?', help='Путь к выходному PDF файлу. Если не указан, создается в папке output')
     
