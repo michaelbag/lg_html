@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Генератор конфигурационных файлов для генератора этикеток v2.17
-Версия скрипта: 1.0
+Версия скрипта: 1.1
 Версия проекта: 2.17
 Поддерживает создание конфигураций для CSV и Excel файлов
 
@@ -22,7 +22,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Автор: Michael Bag
-Версия: 1.0
+Версия: 1.1
 """
 
 import json
@@ -181,6 +181,141 @@ def get_user_input(prompt, default=None, input_type=str, choices=None):
             print("\n\n❌ Отменено пользователем")
             sys.exit(1)
 
+
+def select_data_file():
+    """Выбор файла данных из папки input_data с поддержкой подкаталогов"""
+    data_dir = Path("input_data")
+    
+    if not data_dir.exists():
+        print("❌ Папка input_data не найдена")
+        return get_user_input("Путь к файлу с данными (CSV или Excel)")
+    
+    # Ищем файлы данных рекурсивно во всех подкаталогах
+    data_files = []
+    for ext in ['*.csv', '*.xlsx', '*.xls']:
+        data_files.extend(data_dir.rglob(ext))
+    
+    if not data_files:
+        print("❌ В папке input_data не найдено файлов данных")
+        return get_user_input("Путь к файлу с данными (CSV или Excel)")
+    
+    # Сортируем файлы: сначала по папке, потом по имени
+    data_files.sort(key=lambda x: (x.parent.name, x.name))
+    
+    print("\n📁 Доступные файлы данных:")
+    print("-" * 50)
+    
+    current_folder = None
+    for i, file_path in enumerate(data_files, 1):
+        file_size = file_path.stat().st_size
+        size_str = f"{file_size:,} байт" if file_size < 1024 else f"{file_size/1024:.1f} КБ"
+        
+        # Показываем название папки, если она изменилась
+        folder_name = file_path.parent.name
+        if folder_name != current_folder:
+            if current_folder is not None:
+                print()  # Пустая строка между папками
+            print(f"📂 {folder_name}/")
+            current_folder = folder_name
+        
+        # Показываем файл с отступом
+        relative_path = file_path.relative_to(data_dir)
+        print(f"   {i:2d}. {file_path.name} ({size_str})")
+    
+    print(f"\n{len(data_files) + 1:2d}. Ввести путь вручную")
+    
+    while True:
+        try:
+            choice = input(f"\nВыберите файл данных (1-{len(data_files) + 1}): ").strip()
+            
+            if not choice:
+                print("❌ Выберите номер файла")
+                continue
+            
+            choice_num = int(choice)
+            
+            if choice_num == len(data_files) + 1:
+                return get_user_input("Путь к файлу с данными (CSV или Excel)")
+            elif 1 <= choice_num <= len(data_files):
+                selected_file = data_files[choice_num - 1]
+                print(f"✅ Выбран файл: {selected_file}")
+                return str(selected_file)
+            else:
+                print(f"❌ Выберите номер от 1 до {len(data_files) + 1}")
+                
+        except ValueError:
+            print("❌ Введите корректный номер")
+        except KeyboardInterrupt:
+            print("\n\n❌ Отмена операции")
+            sys.exit(0)
+
+
+def select_template_file():
+    """Выбор PDF шаблона из папки input_templates с поддержкой подкаталогов"""
+    template_dir = Path("input_templates")
+    
+    if not template_dir.exists():
+        print("❌ Папка input_templates не найдена")
+        return get_user_input("Путь к PDF шаблону")
+    
+    # Ищем PDF файлы рекурсивно во всех подкаталогах
+    template_files = list(template_dir.rglob("*.pdf"))
+    
+    if not template_files:
+        print("❌ В папке input_templates не найдено PDF файлов")
+        return get_user_input("Путь к PDF шаблону")
+    
+    # Сортируем файлы: сначала по папке, потом по имени
+    template_files.sort(key=lambda x: (x.parent.name, x.name))
+    
+    print("\n📄 Доступные PDF шаблоны:")
+    print("-" * 50)
+    
+    current_folder = None
+    for i, file_path in enumerate(template_files, 1):
+        file_size = file_path.stat().st_size
+        size_str = f"{file_size:,} байт" if file_size < 1024 else f"{file_size/1024:.1f} КБ"
+        
+        # Показываем название папки, если она изменилась
+        folder_name = file_path.parent.name
+        if folder_name != current_folder:
+            if current_folder is not None:
+                print()  # Пустая строка между папками
+            print(f"📂 {folder_name}/")
+            current_folder = folder_name
+        
+        # Показываем файл с отступом
+        relative_path = file_path.relative_to(template_dir)
+        print(f"   {i:2d}. {file_path.name} ({size_str})")
+    
+    print(f"\n{len(template_files) + 1:2d}. Ввести путь вручную")
+    
+    while True:
+        try:
+            choice = input(f"\nВыберите PDF шаблон (1-{len(template_files) + 1}): ").strip()
+            
+            if not choice:
+                print("❌ Выберите номер файла")
+                continue
+            
+            choice_num = int(choice)
+            
+            if choice_num == len(template_files) + 1:
+                return get_user_input("Путь к PDF шаблону")
+            elif 1 <= choice_num <= len(template_files):
+                selected_file = template_files[choice_num - 1]
+                print(f"✅ Выбран шаблон: {selected_file}")
+                return str(selected_file)
+            else:
+                print(f"❌ Выберите номер от 1 до {len(template_files) + 1}")
+                
+        except ValueError:
+            print("❌ Введите корректный номер")
+        except KeyboardInterrupt:
+            print("\n\n❌ Отмена операции")
+            sys.exit(0)
+
+
 def interactive_mode():
     """Интерактивный режим создания конфигурации"""
     print("=" * 60)
@@ -192,19 +327,23 @@ def interactive_mode():
     print("📁 ОСНОВНЫЕ ПАРАМЕТРЫ")
     print("-" * 30)
     
-    data_file = get_user_input(
-        "Путь к файлу с данными (CSV или Excel)",
-        default="input_data/data.csv"
-    )
+    # Выбор файла данных
+    print("Выбор файла с данными:")
+    data_file = select_data_file()
     
-    template_pdf = get_user_input(
-        "Путь к PDF шаблону",
-        default="input_templates/template.pdf"
-    )
+    # Выбор PDF шаблона
+    print("\nВыбор PDF шаблона:")
+    template_pdf = select_template_file()
+    
+    # Генерируем имя выходного файла на основе шаблона
+    template_path = Path(template_pdf)
+    template_name = template_path.stem  # имя файла без расширения
+    output_filename = f"{template_name}_result.pdf"
+    output_default = f"output/{output_filename}"
     
     output_pdf = get_user_input(
         "Путь к выходному PDF файлу",
-        default="output/result.pdf"
+        default=output_default
     )
     
     template_type = get_user_input(
@@ -389,9 +528,13 @@ def interactive_mode():
     print("💾 СОХРАНЕНИЕ КОНФИГУРАЦИИ")
     print("-" * 30)
     
+    # Генерируем имя файла конфигурации на основе шаблона
+    config_filename = f"{template_name}_conf.json"
+    config_default = f"conf/{config_filename}"
+    
     output_file = get_user_input(
         "Путь к выходному JSON файлу",
-        default="config.json"
+        default=config_default
     )
     
     # Создаем конфигурацию
@@ -453,7 +596,7 @@ def interactive_mode():
 
 def main():
     # Информация о версии и авторе
-    __version__ = "1.0"
+    __version__ = "1.1"
     __author__ = "Michael BAG"
     __author_email__ = "mk@p7net.ru"
     __author_telegram__ = "https://t.me/michaelbag"
