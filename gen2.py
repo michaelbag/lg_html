@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Генератор этикеток в многостраничный PDF документ с применением шаблона
-Версия 2.17
+Версия проекта: читается из файла VERSION
+Версия скрипта gen2.py: 2.18
 
 Поддерживает:
 - CSV файлы с разделителем табуляция (ОБЯЗАТЕЛЬНО в кодировке UTF-8)
+- Excel файлы (.xlsx, .xls)
 - PDF шаблоны (один шаблон на этикетку или несколько этикеток на шаблоне)
 - Позиционирование DataMatrix кода по координатам
 - Многостраничный PDF документ
@@ -34,7 +36,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Автор: Michael Bag
-Версия: 2.17
+Версия проекта: читается из файла VERSION
+Версия скрипта gen2.py: 2.18
 """
 
 import argparse
@@ -57,6 +60,20 @@ except ImportError:
     EXCEL_AVAILABLE = False
 
 # Информация о версии
+def get_project_version():
+    """Получить версию проекта из файла VERSION"""
+    try:
+        version_file = Path(__file__).parent / "VERSION"
+        if version_file.exists():
+            return version_file.read_text(encoding='utf-8').strip()
+        else:
+            return "2.17"  # fallback версия проекта
+    except Exception:
+        return "2.17"  # fallback версия проекта
+
+# Версия проекта (из файла VERSION)
+__project_version__ = get_project_version()
+# Версия скрипта gen2.py
 __version__ = "2.18"
 __author__ = "Michael BAG"
 __author_email__ = "mk@p7net.ru"
@@ -960,10 +977,25 @@ def generate_multi_page_pdf(csv_data, template_path, template_type, labels_per_p
 def main():
     parser = argparse.ArgumentParser(
         description=f'{__description__} v{__version__}',
-        epilog=f'''Автор: {__author__}
+        epilog=f'''Информация о проекте:
+Автор: {__author__}
 E-mail: {__author_email__}
 Telegram: {__author_telegram__}
-Версия: {__version__}''',
+Версия проекта: {__project_version__}
+Версия скрипта gen2.py: {__version__}
+
+Поддерживаемые форматы:
+- CSV файлы с разделителем табуляция (ОБЯЗАТЕЛЬНО в кодировке UTF-8)
+- Excel файлы (.xlsx, .xls)
+- PDF шаблоны (один шаблон на этикетку или несколько этикеток на шаблоне)
+- JSON конфигурационные файлы
+
+Примеры конфигураций:
+- conf/single_template.json - для single шаблона (один шаблон на этикетку)
+- conf/multiple_template.json - для multiple шаблона (несколько этикеток на странице)
+- conf/complete_example.json - полный пример со всеми параметрами
+
+Используйте --show-configs для просмотра всех доступных примеров конфигураций.''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
