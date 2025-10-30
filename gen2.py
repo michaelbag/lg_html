@@ -67,9 +67,9 @@ def get_project_version():
         if version_file.exists():
             return version_file.read_text(encoding='utf-8').strip()
         else:
-            return "2.17"  # fallback версия проекта
+            return "2.19"  # fallback версия проекта
     except Exception:
-        return "2.17"  # fallback версия проекта
+        return "2.19"  # fallback версия проекта
 
 # Версия проекта (из файла VERSION)
 __project_version__ = get_project_version()

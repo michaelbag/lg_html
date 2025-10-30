@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Генератор конфигурационных файлов для генератора этикеток v2.17
-Версия скрипта: 1.1
-Версия проекта: 2.17
+Генератор конфигурационных файлов для генератора этикеток v2.19
+Версия скрипта: 1.2
+Версия проекта: 2.19
 Поддерживает создание конфигураций для CSV и Excel файлов
 
 Copyright (C) 2025 Michael Bag
@@ -22,7 +22,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 Автор: Michael Bag
-Версия: 1.1
+Версия: 1.2
 """
 
 import json
@@ -30,6 +30,69 @@ import argparse
 import os
 import sys
 from pathlib import Path
+
+# --- Совместимость вывода для Windows (без эмодзи) ---
+def _build_sanitizer():
+    replacements = {
+        "📁": "",
+        "📂": "",
+        "📄": "",
+        "📊": "",
+        "🔧": "",
+        "✅": "OK ",
+        "❌": "ERR ",
+        "⚠️": "WARN ",
+        "🚀": "",
+        "✓": "OK ",
+        "✗": "ERR ",
+        "📝": "",
+        "📐": "",
+    }
+
+    def sanitize(text: str) -> str:
+        if not isinstance(text, str):
+            return text
+        for k, v in replacements.items():
+            text = text.replace(k, v)
+        # Удаляем суррогатные пары (эмодзи вне BMP)
+        return "".join(ch for ch in text if ord(ch) <= 0xFFFF)
+
+    return sanitize
+
+_sanitize = _build_sanitizer()
+
+def _wrap_print_for_windows():
+    orig_print = print  # noqa: F821 - используем встроенный print
+    def safe_print(*args, **kwargs):
+        sep = kwargs.get('sep', ' ')
+        end = kwargs.get('end', '\n')
+        file = kwargs.get('file', None)
+        flush = kwargs.get('flush', False)
+        processed = []
+        for a in args:
+            if isinstance(a, str):
+                processed.append(_sanitize(a))
+            else:
+                processed.append(a)
+        orig_print(*processed, sep=sep, end=end, file=file, flush=flush)
+    return safe_print
+
+# Активируем безопасный вывод для Windows-консолей
+try:
+    if os.name == 'nt':
+        print = _wrap_print_for_windows()  # type: ignore
+except Exception:
+    pass
+
+# --- Версии ---
+def get_project_version():
+    try:
+        version_file = Path(__file__).parent / "VERSION"
+        if version_file.exists():
+            return version_file.read_text(encoding='utf-8').strip()
+        return "2.19"
+    except Exception:
+        return "2.19"
 
 def create_single_template_config(data_file, template_pdf, output_pdf, **kwargs):
     """Создание конфигурации для single шаблона"""
@@ -181,6 +244,50 @@ def get_user_input(prompt, default=None, input_type=str, choices=None):
             print("\n\n❌ Отменено пользователем")
             sys.exit(1)
 
+
+def ensure_json_output_path(path_str, default_name="config.json"):
+    """Привести путь к JSON файлу к стандарту:
+    - если расширение отсутствует, добавить .json
+    - если путь без директории, поместить файл в conf/
+    - если путь пустой/None, использовать conf/<default_name>
+    """
+    try:
+        from pathlib import Path
+        if not path_str:
+            p = Path("conf") / default_name
+        else:
+            p = Path(path_str)
+            if p.suffix.lower() != ".json":
+                p = p.with_suffix(".json")
+            if str(p.parent) == "." or str(p.parent) == "":
+                p = Path("conf") / p.name
+        # Создаем директорию если не существует
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return str(p)
+    except Exception:
+        # Фоллбэк на простую строку
+        return f"conf/{default_name}"
+
+def ensure_pdf_output_path(path_str, default_name="output.pdf"):
+    """Привести путь к PDF файлу к стандарту:
+    - если расширение отсутствует, добавить .pdf
+    - если путь без директории, поместить файл в output/
+    - если путь пустой/None, использовать output/<default_name>
+    """
+    try:
+        from pathlib import Path
+        if not path_str:
+            p = Path("output") / default_name
+        else:
+            p = Path(path_str)
+            if p.suffix.lower() != ".pdf":
+                p = p.with_suffix(".pdf")
+            if str(p.parent) == "." or str(p.parent) == "":
+                p = Path("output") / p.name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return str(p)
+    except Exception:
+        return f"output/{default_name}"
 
 def select_data_file():
     """Выбор файла данных из папки input_data с поддержкой подкаталогов"""
@@ -345,12 +452,15 @@ def interactive_mode():
         "Путь к выходному PDF файлу",
         default=output_default
     )
+    # Нормализуем путь: добавляем .pdf и, если путь без директории, помещаем в output/
+    output_pdf = ensure_pdf_output_path(output_pdf, default_name=output_filename)
     
-    template_type = get_user_input(
-        "Тип шаблона (single - один на этикетку, multiple - несколько на странице)",
+    template_type_input = get_user_input(
+        "Тип шаблона: single (s) — один на этикетку, multiple (m) — несколько на странице",
         default="single",
-        choices=["single", "multiple"]
-    )
+        choices=["single", "multiple", "s", "m"]
+    ).lower()
+    template_type = "single" if template_type_input in ["single", "s"] else "multiple"
     
     print()
     print("📊 ПАРАМЕТРЫ DATAMATRIX")
@@ -536,6 +646,8 @@ def interactive_mode():
         "Путь к выходному JSON файлу",
         default=config_default
     )
+    # Нормализуем путь: добавляем .json при необходимости и размещаем в conf/
+    output_file = ensure_json_output_path(output_file, default_name=config_filename)
     
     # Создаем конфигурацию
     kwargs = {
@@ -596,14 +708,15 @@ def interactive_mode():
 
 def main():
     # Информация о версии и авторе
-    __version__ = "1.1"
+    __version__ = "1.2"
     __author__ = "Michael BAG"
     __author_email__ = "mk@p7net.ru"
     __author_telegram__ = "https://t.me/michaelbag"
     __description__ = "Генератор конфигурационных файлов для генератора этикеток"
     
+    project_version = get_project_version()
     parser = argparse.ArgumentParser(
-        description=f"{__description__} v{__version__} (проект v2.17)",
+        description=f"{__description__} v{__version__} (проект v{project_version})",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 Примеры использования:
@@ -702,7 +815,7 @@ Telegram: {__author_telegram__}
     print("=" * 60)
     print(f"{__description__} v{__version__}")
     print(f"Автор: {__author__}")
-    print(f"Версия проекта: 2.17")
+    print(f"Версия проекта: {project_version}")
     print("=" * 60)
     print()
     
@@ -722,6 +835,9 @@ Telegram: {__author_telegram__}
     else:
         print("⚠️  Неизвестный тип файла - предполагается CSV")
     
+    # Нормализуем путь к выходному PDF для неинтерактивного режима
+    args.output_pdf = ensure_pdf_output_path(args.output_pdf, default_name='output.pdf')
+
     # Создаем конфигурацию
     kwargs = {
         'dm_x': args.dm_x,
@@ -754,8 +870,8 @@ Telegram: {__author_telegram__}
     else:
         config = create_single_template_config(args.data_file, args.template_pdf, args.output_pdf, **kwargs)
     
-    # Определяем выходной файл
-    output_file = args.output or 'config.json'
+    # Определяем выходной файл и нормализуем путь
+    output_file = ensure_json_output_path(args.output, default_name='config.json')
     
     # Сохраняем конфигурацию
     try:
